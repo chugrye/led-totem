@@ -1,4 +1,4 @@
-package com.hariharan.arduinousb;
+package com.edc.totemled;
 
 import android.app.Application;
 import android.test.ApplicationTestCase;

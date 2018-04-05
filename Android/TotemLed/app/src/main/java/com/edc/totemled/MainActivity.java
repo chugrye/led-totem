@@ -1,4 +1,4 @@
-package com.hariharan.arduinousb;
+package com.edc.totemled;
 
 import android.app.Activity;
 import android.app.PendingIntent;
@@ -21,13 +21,11 @@ import com.felhr.usbserial.UsbSerialDevice;
 import com.felhr.usbserial.UsbSerialInterface;
 
 import java.io.UnsupportedEncodingException;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
 public class MainActivity extends Activity {
-    public final String ACTION_USB_PERMISSION = "com.hariharan.arduinousb.USB_PERMISSION";
+    public final String ACTION_USB_PERMISSION = "com.edc.totemled.USB_PERMISSION";
     Button startButton, sendButton, clearButton, stopButton, rainbowTrailButton;
     TextView textView;
     EditText editText;
