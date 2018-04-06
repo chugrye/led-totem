@@ -26,6 +26,7 @@ import java.util.Map;
 
 public class MainActivity extends Activity {
     public final String ACTION_USB_PERMISSION = "com.edc.totemled.USB_PERMISSION";
+    public final int LED_COUNT = 30;
     Button startButton, sendButton, clearButton, stopButton, rainbowTrailButton;
     TextView textView;
     EditText editText;
@@ -163,13 +164,10 @@ public class MainActivity extends Activity {
 
     public void onClickClear(View view) {
         textView.setText(" ");
+        textView.scrollTo(0,0);
     }
 
     public void onClickRainbowTrail(View view) {
-        //String string = editText.getText().toString();
-        int ledCount = 30;
-       // byte dimensions = 5;
-        //byte[][] ledValues = new byte[30][5];
         int red = 0;
         int green = 0;
         int blue = 0;
@@ -178,23 +176,31 @@ public class MainActivity extends Activity {
         int nextGreen = 0;
         int nextBlue = 0;
 
-        for (int i = 0; i < ledCount; i++) {
-            if (red < 255) {
-                nextRed = red + 25;
-                red = Math.min(nextRed, 255);
-            } else if (green < 255) {
-                nextGreen = green + 25;
-                green = Math.min(nextGreen, 255);
-            } else if (blue < 255) {
-                nextBlue = blue + 25;
-                blue = Math.min(nextBlue, 255);
-            }
+        byte[] nextByte = new byte[3];
 
-            //ledValues[i] = new byte[] {1, i, red, green, blue};
-            byte[] nextByte = new byte[] {1, (byte)(i+1), (byte)red, (byte)green, (byte)blue};
+        for (int i = 0; i < LED_COUNT; i++) {
+            if (red < 255) {
+                nextRed = red + 26;
+                red = Math.min(nextRed, 255);
+                nextByte[0] = (byte)red;
+                nextByte[1] = 0;
+                nextByte[2] = 0;
+            } else if (green < 255) {
+                nextGreen = green + 26;
+                green = Math.min(nextGreen, 255);
+                nextByte[0] = 0;
+                nextByte[1] = (byte)green;
+                nextByte[2] = 0;
+            } else if (blue < 255) {
+                nextBlue = blue + 26;
+                blue = Math.min(nextBlue, 255);
+                nextByte[0] = 0;
+                nextByte[1] = 0;
+                nextByte[2] = (byte) blue;
+            }
             serialPort.write(nextByte);
 
-            tvAppend(textView, "\nData Sent : " + (0xff&nextByte[2]) + ", " + (0xff&nextByte[3]) + ", " + (0xff&nextByte[4]) + "\n");
+            //tvAppend(textView, "\nData Sent : " + (0xff&nextByte[2]) + ", " + (0xff&nextByte[3]) + ", " + (0xff&nextByte[4]) + "\n");
         }
     }
 

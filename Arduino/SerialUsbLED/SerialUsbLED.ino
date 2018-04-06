@@ -2,13 +2,16 @@
 #define greenPin 5
 #define bluePin 3
 
-const long interval = 1000;
-unsigned long previousMillis = 0;
-char ledIndex = 0;
+#define NUMPIXELS     30
 
-char curFrame[30][3];
+const long interval = 300;
+unsigned long previousMillis = 0;
 
 bool needsData = true;
+
+int ledIndex = 0;
+byte pixelBuffer[3];
+byte curFrame[30][3];
 
 void setup(){
   //start the Serial connection
@@ -20,37 +23,44 @@ void setup(){
   pinMode(bluePin, OUTPUT);
 }
 
-void setColor(int red, int green, int blue)
+void setColor(byte red, byte green, byte blue, int ledIndex)
 {
   analogWrite(redPin, red);
   analogWrite(greenPin, green);
   analogWrite(bluePin, blue);
+
+  Serial.print("LED: ");
+  Serial.print(ledIndex);
+  Serial.print(" RGB: ");
+  Serial.print(red);
+  Serial.print(",");
+  Serial.print(green);
+  Serial.print(",");
+  Serial.println(blue);
 }
 
 void loop(){
   unsigned long currentMillis = millis();
-  if (Serial.available()){
-    char ledVals[5];
-    for (char i = 0; i < sizeof(ledVals); i++) {
-      ledVals[i] = Serial.read();
+  if(Serial.available())
+  {
+    for (int i = 0; i < NUMPIXELS; i++) {
+      Serial.readBytes(pixelBuffer, 3);
+      curFrame[i][0] = pixelBuffer[0];
+      curFrame[i][1] = pixelBuffer[1];
+      curFrame[i][2] = pixelBuffer[2];
     }
-    char ledNum = ledVals[1];
-    curFrame[ledNum][0] = ledVals[2];
-    curFrame[ledNum][1] = ledVals[2];
-    curFrame[ledNum][2] = ledVals[2];
+    while(Serial.available()) {
+      // read remaining stuff
+      Serial.read();
+    }
     ledIndex = 0;
     needsData = false;
   } else if (!needsData) {
     if (currentMillis - previousMillis >= interval) {
       previousMillis = currentMillis;
-      if (ledIndex < sizeof(curFrame)) {
-        char (*curLed)[3];
-        curLed = &curFrame[ledIndex]; 
-        //char * curLed[3] = curFrame[ledIndex];
-        int redVal = (*curLed[0] - '0');
-        int greenVal = (*curLed[1] - '0');
-        int blueVal = (*curLed[2] - '0');
-        setColor(redVal,greenVal,blueVal);
+      if (ledIndex < NUMPIXELS) {
+        byte* curLed = curFrame[ledIndex];
+        setColor(curLed[0],curLed[1],curLed[2], ledIndex);
         ledIndex++;
       } else {
         needsData = true;
