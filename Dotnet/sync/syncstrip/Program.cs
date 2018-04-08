@@ -65,19 +65,11 @@ namespace syncstrip
 
             Console.WriteLine("writing data");
             serial.Write(header, 0, header.Length);
-            //serial.Write(frameByte, 0, frameByte.Length);
             serial.Write(frameByte, 0, frameByte.Length);
-            //serial.Write(data, frame * stride,pixels * 3);
 
             serial.Write(footer, 0, footer.Length);
             serial.ReadByte();
 
-            // Loop through remaining frames
-            //for (int i = 0; i < 62; i++)
-            //{
-            //    Console.WriteLine(serial.ReadByte());
-            //}
-            //Console.WriteLine("Footer received");
         }
 
         private static byte[] TransformToOneDimensionalArray(byte[,,,] animation, int frameSlice)
