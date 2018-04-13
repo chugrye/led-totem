@@ -2,3 +2,5 @@
 *.pdb
 *.cache
 *.txt
+/Dotnet/sync/syncstrip/bin/
+/Dotnet/sync/syncstrip/obj/ 
