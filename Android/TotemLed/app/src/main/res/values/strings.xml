@@ -3,5 +3,7 @@
 
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
+    <string name="button_rgb_trail">RGB Trail</string>
     <string name="button_rainbow_trail">Rainbow Trail</string>
+    <string name="button_rainbow_cycle">Rainbow Cycle</string>
 </resources>
