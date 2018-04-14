@@ -12,8 +12,6 @@
 #define NUMPIXELS     30 
 #define NUMLINES	  7
 CRGB leds[NUMLINES][NUMPIXELS];
-int framesPerSecond = 15;
-int delayval = 1000/framesPerSecond;
 
 void setup() {
 #if defined (__AVR_ATtiny85__)
@@ -51,7 +49,6 @@ void loop() {
 
 		// Update LEDs
 		FastLED.show();
-    delay(delayval);
 
 		// Tell the controller we're ready
 		// We don't want to be receiving serial data during leds.show() because data will be dropped

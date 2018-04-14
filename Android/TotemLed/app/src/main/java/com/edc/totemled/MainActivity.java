@@ -30,6 +30,8 @@ public class MainActivity extends Activity {
     public final int NUMLINES = 7;
     public final int NUMPIXELS = 30;
     public final int NUMCOLORS = 3;
+    public final int FRAMES_PER_SECOND = 15;
+    public final int DELAY = 1000 / FRAMES_PER_SECOND;
     Button startButton, sendButton, clearButton, stopButton;
     Button rgbTrailButton, rainbowTrailButton, rainbowCycleButton;
     TextView textView;
@@ -57,12 +59,19 @@ public class MainActivity extends Activity {
 //
 //        }
 //    };
-    UsbSerialInterface.UsbReadCallback testCallback = new UsbSerialInterface.UsbReadCallback() { //Defining a Callback which triggers whenever data is read.
+    UsbSerialInterface.UsbReadCallback serialReadCallback = new UsbSerialInterface.UsbReadCallback() { //Defining a Callback which triggers whenever data is read.
                 @Override
         public void onReceivedData(byte[] arg0) {
             String data = null;
             try {
                 if (arg0[0] == 0x00) {
+                    try {
+                        //set time in mili
+                        Thread.sleep(DELAY);
+
+                    }catch (Exception e){
+                        e.printStackTrace();
+                    }
                     currentFrame++;
                     SendFrame(currentFrame);
                 }
@@ -87,7 +96,7 @@ public class MainActivity extends Activity {
                             serialPort.setStopBits(UsbSerialInterface.STOP_BITS_1);
                             serialPort.setParity(UsbSerialInterface.PARITY_NONE);
                             serialPort.setFlowControl(UsbSerialInterface.FLOW_CONTROL_OFF);
-                            serialPort.read(testCallback);
+                            serialPort.read(serialReadCallback);
                             tvAppend(textView,"Serial Connection Opened!\n");
 
                         } else {
