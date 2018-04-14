@@ -1,4 +1,6 @@
 *.exe
 *.pdb
 *.cache
-*.txt
+bin/
+obj/
+.vs/
