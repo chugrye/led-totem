@@ -122,7 +122,7 @@
         android:layout_marginRight="8dp"
         android:layout_marginStart="8dp"
         android:layout_marginTop="20dp"
-        android:onClick="onClickRainbowTrailCycle"
+        android:onClick="onClickRainbowCycle"
         android:text="@string/button_rainbow_cycle"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"

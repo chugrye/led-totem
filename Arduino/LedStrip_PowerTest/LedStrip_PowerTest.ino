@@ -1,5 +1,4 @@
 #include <FastLED.h>
-#include <Arduino.h>
 
 #define LEDPIN1            2
 
@@ -7,30 +6,21 @@
 #define NUMLINES    1
 CRGB leds[NUMLINES][NUMPIXELS];
 
-bool firstTime = true;
-
 void setup() {
-#if defined (__AVR_ATtiny85__)
-  if (F_CPU == 16000000) clock_prescale_set(clock_div_1);
-#endif
-  Serial.begin(9600);
   FastLED.addLeds<NEOPIXEL, LEDPIN1>(leds[0], NUMPIXELS);
-
-  // Open serial port and tell the controller we're ready.
-  //Serial.begin(115200);
+  Serial.begin(115200);
 }
 
 byte count = 0;
 void loop() {
 //    Serial.print("COUNT: ");
 //    Serial.println(count);
-  int red, green, blue;
-  for (int pixel = 0; pixel < NUMPIXELS; pixel++)
+  byte red, green, blue;
+  for (byte pixel = 0; pixel < NUMPIXELS; pixel++)
   {
-    int factor = (count + pixel);
-    int index = (factor / 15) % 3;
-    int subVal = ((factor / 15) * 255);
-    int val = (count + pixel) * 17 - subVal;
+    byte factor = count + pixel;
+    byte index = (factor / 15) % 3;
+    byte val = (factor % 15) * 17;
     if (index == 0) {
        red = val;
        green = 255 - val;
