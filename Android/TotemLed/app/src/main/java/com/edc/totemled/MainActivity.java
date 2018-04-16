@@ -20,8 +20,10 @@ import android.widget.TextView;
 import com.felhr.usbserial.UsbSerialDevice;
 import com.felhr.usbserial.UsbSerialInterface;
 import com.google.common.io.ByteStreams;
+
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -30,6 +32,8 @@ public class MainActivity extends Activity {
     public final int NUMLINES = 7;
     public final int NUMPIXELS = 30;
     public final int NUMCOLORS = 3;
+    public final int FRAMES_PER_SECOND = 15;
+    public final int DELAY = 1000 / FRAMES_PER_SECOND;
     Button startButton, sendButton, clearButton, stopButton;
     Button rgbTrailButton, rainbowTrailButton, rainbowCycleButton;
     TextView textView;
@@ -38,32 +42,48 @@ public class MainActivity extends Activity {
     UsbDevice device;
     UsbSerialDevice serialPort;
     UsbDeviceConnection connection;
+    public boolean killFrame = false;
     public int numFrames;
     public int currentFrame;
     byte [][][][] animation;
 
-//    UsbSerialInterface.UsbReadCallback mCallback = new UsbSerialInterface.UsbReadCallback() { //Defining a Callback which triggers whenever data is read.
-//        @Override
-//        public void onReceivedData(byte[] arg0) {
-//            String data = null;
-//            try {
-//                data = new String(arg0, "UTF-8");
-//                data.concat("/n");
-//                tvAppend(textView, data);
-//            } catch (UnsupportedEncodingException e) {
-//                e.printStackTrace();
-//            }
-//
-//
-//        }
-//    };
-    UsbSerialInterface.UsbReadCallback testCallback = new UsbSerialInterface.UsbReadCallback() { //Defining a Callback which triggers whenever data is read.
-                @Override
+    UsbSerialInterface.UsbReadCallback serialReadCallback = new UsbSerialInterface.UsbReadCallback() { //Defining a Callback which triggers whenever data is read.
+        @Override
         public void onReceivedData(byte[] arg0) {
-            String data = null;
             try {
-                if (arg0[0] == 0x00) {
+                // Render next frame
+                if (arg0[0] == (byte)0x00) {
+                    try {
+                        Thread.sleep(DELAY);
+
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
                     currentFrame++;
+                    sendFrame(currentFrame);
+                }
+                // Log serial message to text view
+                if (arg0[0] == (byte)0xAA) {
+                    String data;
+                    try {
+                        data = new String(arg0, "UTF-8");
+                        data.concat("/n");
+                        tvAppend(textView, data);
+                    } catch (UnsupportedEncodingException e) {
+                        e.printStackTrace();
+                    }
+                }
+                // Cleared / start animation
+                if (arg0[0] == (byte)0x03) {
+                    try {
+                        Thread.sleep(DELAY);
+
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    // We have already cleared so now we
+                    // can start rendering animation
+                    killFrame = false;
                     sendFrame(currentFrame);
                 }
             } catch (Exception e) {
@@ -87,7 +107,7 @@ public class MainActivity extends Activity {
                             serialPort.setStopBits(UsbSerialInterface.STOP_BITS_1);
                             serialPort.setParity(UsbSerialInterface.PARITY_NONE);
                             serialPort.setFlowControl(UsbSerialInterface.FLOW_CONTROL_OFF);
-                            serialPort.read(testCallback);
+                            serialPort.read(serialReadCallback);
                             tvAppend(textView,"Serial Connection Opened!\n");
 
                         } else {
@@ -106,8 +126,6 @@ public class MainActivity extends Activity {
 
             }
         }
-
-        ;
     };
 
     @Override
@@ -131,8 +149,6 @@ public class MainActivity extends Activity {
         filter.addAction(UsbManager.ACTION_USB_DEVICE_ATTACHED);
         filter.addAction(UsbManager.ACTION_USB_DEVICE_DETACHED);
         registerReceiver(broadcastReceiver, filter);
-
-
     }
 
     public void setUiEnabled(boolean bool) {
@@ -143,7 +159,6 @@ public class MainActivity extends Activity {
         rainbowTrailButton.setEnabled(bool);
         rainbowCycleButton.setEnabled(bool);
         textView.setEnabled(bool);
-
     }
 
     public void onClickStart(View view) {
@@ -168,8 +183,6 @@ public class MainActivity extends Activity {
                     break;
             }
         }
-
-
     }
 
     public void onClickSend(View view) {
@@ -177,14 +190,12 @@ public class MainActivity extends Activity {
 
         serialPort.write(string.getBytes());
         tvAppend(textView, "\nData Sent : " + string + "\n");
-
     }
 
     public void onClickStop(View view) {
         setUiEnabled(false);
         serialPort.close();
         tvAppend(textView,"\nSerial Connection Closed! \n");
-
     }
 
     public void onClickClear(View view) {
@@ -193,28 +204,49 @@ public class MainActivity extends Activity {
     }
 
     /**
+     * Logic to set state to destroy/kill any previous animation
+     */
+    public void DestroyAnimation() {
+        killFrame = true;
+    }
+
+    /**
      * Setup to initialize variables for new animation
      * @param frameCount total number of frames that will be rendered
      */
     public void animationSetup(int frameCount) {
+        DestroyAnimation();
         currentFrame = 0;
         numFrames = frameCount;
         animation = new byte[numFrames][NUMLINES][NUMPIXELS][NUMCOLORS];
     }
 
-    public void sendFrame(int frameSlice)
-    {
-        byte[] frameByte = transformToOneDimensionalArray(frameSlice);
-        //Console.WriteLine(frameByte.Length);
-        byte[] header = new byte[] { 0x01 };//, (byte)(test.Length/3)};
-        byte[] footer = new byte[] { 0x00 };
+    public void sendFrame(int frameSlice) {
+        // Only send frame if there are any available
+        // otherwise just return
+        if (frameSlice >= numFrames) {
+            return;
+        }
+        byte[] header = new byte[] { (byte)0x01 };
+        byte[] frameByte = animationToOneDimensionalArray();
+        byte[] footer = new byte[] { (byte)0x00 };
 
-        //Console.WriteLine("writing data");
-        //tvAppend(textView, "Writing data - frame" + currentFrame + "\n");
+        if (!killFrame) {
+            serialPort.write(header);
+            serialPort.write(frameByte);
+            serialPort.write(footer);
+        } else {
+            // If we just killed animation frame this state can be reset
+            killFrame = false;
+        }
+    }
+
+    /**
+     * Send command to clear LED strip and proceed with next animation
+     */
+    public void sendClear() {
+        byte[] header = new byte[] { (byte)0x03 };
         serialPort.write(header);
-        serialPort.write(frameByte);
-        serialPort.write(footer);
-        //serialPort.ReadByte();
     }
 
     public void sendFrame(byte[] frame)
@@ -233,8 +265,11 @@ public class MainActivity extends Activity {
 
 
 
-    private byte[] transformToOneDimensionalArray(int frameSlice)
-    {
+    /**
+     * Convert our animation multidimensional array into single dimension
+     * @return byte[] animation data
+     */
+    private byte[] animationToOneDimensionalArray() {
         byte[] frameByte = new byte[NUMLINES * NUMPIXELS * NUMCOLORS];
         int iterator = 0;
         for (int line = 0; line < NUMLINES; line++)
@@ -243,8 +278,7 @@ public class MainActivity extends Activity {
             {
                 for (int color = 0; color < NUMCOLORS; color++)
                 {
-                    //                        Console.WriteLine(iterator);
-                    frameByte[iterator] = animation[frameSlice][line][pixel][color];
+                    frameByte[iterator] = animation[currentFrame][line][pixel][color];
                     iterator++;
                 }
             }
@@ -281,7 +315,7 @@ public class MainActivity extends Activity {
                 }
             }
         }
-        sendFrame(currentFrame);
+        sendClear();
     }
 
     public void onClickRainbowTrail(View view) {
@@ -297,9 +331,17 @@ public class MainActivity extends Activity {
                 }
             }
         }
-
-        sendFrame(currentFrame);
+        sendClear();
     }
+
+    // Rainbow Cycle Program - Equally distributed
+    public void onClickRainbowCycle(View view) {
+        DestroyAnimation();
+        byte[] header = new byte[] { (byte)254 };
+        serialPort.write(header);
+    }
+
+    // TODO: Revisit this animation (might not need it any longer in favor of RainbowCycle
 
     // Rainbow Cycle Program - Equally distributed
     public void onClickRainbowTrailCycle(View view) {
@@ -384,7 +426,5 @@ public class MainActivity extends Activity {
                 }
             }
         }
-
     }
-
 }
