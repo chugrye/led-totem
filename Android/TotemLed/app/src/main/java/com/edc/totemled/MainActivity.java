@@ -1,6 +1,5 @@
 package com.edc.totemled;
 
-import android.os.Handler;
 import android.app.Activity;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
@@ -20,8 +19,9 @@ import android.widget.TextView;
 
 import com.felhr.usbserial.UsbSerialDevice;
 import com.felhr.usbserial.UsbSerialInterface;
-
-import java.io.UnsupportedEncodingException;
+import com.google.common.io.ByteStreams;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -64,7 +64,7 @@ public class MainActivity extends Activity {
             try {
                 if (arg0[0] == 0x00) {
                     currentFrame++;
-                    SendFrame(currentFrame);
+                    sendFrame(currentFrame);
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -196,15 +196,15 @@ public class MainActivity extends Activity {
      * Setup to initialize variables for new animation
      * @param frameCount total number of frames that will be rendered
      */
-    public void AnimationSetup(int frameCount) {
+    public void animationSetup(int frameCount) {
         currentFrame = 0;
         numFrames = frameCount;
         animation = new byte[numFrames][NUMLINES][NUMPIXELS][NUMCOLORS];
     }
 
-    public void SendFrame(int frameSlice)
+    public void sendFrame(int frameSlice)
     {
-        byte[] frameByte = TransformToOneDimensionalArray(frameSlice);
+        byte[] frameByte = transformToOneDimensionalArray(frameSlice);
         //Console.WriteLine(frameByte.Length);
         byte[] header = new byte[] { 0x01 };//, (byte)(test.Length/3)};
         byte[] footer = new byte[] { 0x00 };
@@ -217,7 +217,23 @@ public class MainActivity extends Activity {
         //serialPort.ReadByte();
     }
 
-    private byte[] TransformToOneDimensionalArray(int frameSlice)
+    public void sendFrame(byte[] frame)
+    {
+        //Console.WriteLine(frameByte.Length);
+        byte[] header = new byte[] { 0x01 };//, (byte)(test.Length/3)};
+        byte[] footer = new byte[] { 0x00 };
+
+        //Console.WriteLine("writing data");
+        //tvAppend(textView, "Writing data - frame" + currentFrame + "\n");
+        serialPort.write(header);
+        serialPort.write(frame);
+        serialPort.write(footer);
+        //serialPort.ReadByte();
+    }
+
+
+
+    private byte[] transformToOneDimensionalArray(int frameSlice)
     {
         byte[] frameByte = new byte[NUMLINES * NUMPIXELS * NUMCOLORS];
         int iterator = 0;
@@ -237,7 +253,7 @@ public class MainActivity extends Activity {
     }
 
     public void onClickRgbTrail(View view) {
-        AnimationSetup(60);
+        animationSetup(60);
 
         byte[] nextColor;
 
@@ -265,11 +281,11 @@ public class MainActivity extends Activity {
                 }
             }
         }
-        SendFrame(currentFrame);
+        sendFrame(currentFrame);
     }
 
     public void onClickRainbowTrail(View view) {
-        AnimationSetup(256 / 4);
+        animationSetup(256 / 4);
 
         int frame, line, pixel;
 
@@ -282,12 +298,12 @@ public class MainActivity extends Activity {
             }
         }
 
-        SendFrame(currentFrame);
+        sendFrame(currentFrame);
     }
 
     // Rainbow Cycle Program - Equally distributed
     public void onClickRainbowTrailCycle(View view) {
-        AnimationSetup(256 / 4);
+        animationSetup(256 / 4);
 
         int frame, line, pixel;
 
@@ -299,8 +315,19 @@ public class MainActivity extends Activity {
             }
         }
 
-        SendFrame(currentFrame);
+        sendFrame(currentFrame);
     }
+
+    public void onClickTree(View view) {
+        try {
+            playAnimationFromFile(getAssets().open("test.bin"));
+        }catch(IOException e)
+        {
+            Log.e("uh oh", e.getMessage());
+        }
+    }
+
+
     // Input a value 0 to 255 to get a color value.
     // The colours are a transition r - g - b - back to r.
     byte[] Wheel(byte WheelPos) {
@@ -331,6 +358,33 @@ public class MainActivity extends Activity {
                 ftv.append(ftext);
             }
         });
+    }
+
+    private void playAnimationFromFile(InputStream fileInputStream) throws IOException{
+
+        int bytesInFrame = 630;
+        byte[] animation = ByteStreams.toByteArray(fileInputStream);
+        Log.i("ok", "got here");
+        byte[] frame = new byte[bytesInFrame];
+        int frameArrayCounter = 0;
+        while(true) {
+            for (int rgbValue = 0; rgbValue < animation.length; rgbValue++) {
+                if (frameArrayCounter < bytesInFrame) {
+                    frame[frameArrayCounter] = animation[rgbValue];
+                    frameArrayCounter++;
+                } else {
+                    sendFrame(frame);
+                    frameArrayCounter = 0;
+                    frame = new byte[bytesInFrame];
+                    try {
+                        Thread.sleep(250);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
+
     }
 
 }
