@@ -232,7 +232,8 @@ public class MainActivity extends Activity {
         // Only send frame if there are any available
         // otherwise just return
         if (frameSlice >= numFrames) {
-            return;
+            currentFrame = 0;
+            frameSlice = currentFrame;
         }
         byte[] frameByte = animationToOneDimensionalArray();
         sendFrame(frameByte);
