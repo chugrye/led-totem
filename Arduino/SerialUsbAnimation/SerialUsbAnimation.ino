@@ -103,30 +103,32 @@ void rainbowCycleAnimation() {
 	byte rainbowTrailFrameCount = 0;
 	byte red, green, blue;
 	while (Serial.available() == 0) {
-		for (byte pixel = 0; pixel < NUMPIXELS; pixel++)
-		{
-			byte factor = rainbowTrailFrameCount + pixel;
-			byte index = (factor / 15) % 3;
-			byte val = (factor % 15) * 17;
-			if (index == 0) {
-				red = val;
-				green = 255 - val;
-				blue = 0;
-			}
-			else if (index == 1) {
-				red = 255 - val;
-				green = 0;
-				blue = val;
-			}
-			else if (index == 2) {
-				red = 0;
-				green = val;
-				blue = 255 - val;
-			}
-			leds[0][pixel].r = red;
-			leds[0][pixel].g = green;
-			leds[0][pixel].b = blue;
-		}
+    for (byte line = 0; line < NUMLINES; line++) {
+  		for (byte pixel = 0; pixel < NUMPIXELS; pixel++)
+  		{
+  			byte factor = rainbowTrailFrameCount + pixel;
+  			byte index = (factor / 15) % 3;
+  			byte val = (factor % 15) * 17;
+  			if (index == 0) {
+  				red = val;
+  				green = 255 - val;
+  				blue = 0;
+  			}
+  			else if (index == 1) {
+  				red = 255 - val;
+  				green = 0;
+  				blue = val;
+  			}
+  			else if (index == 2) {
+  				red = 0;
+  				green = val;
+  				blue = 255 - val;
+  			}
+  			leds[line][pixel].r = red;
+  			leds[line][pixel].g = green;
+  			leds[line][pixel].b = blue;
+  		}
+    }
 		FastLED.show();
 		rainbowTrailFrameCount++;
 		rainbowTrailFrameCount = rainbowTrailFrameCount % 45;

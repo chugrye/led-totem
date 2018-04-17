@@ -235,6 +235,12 @@ public class MainActivity extends AppCompatActivity {
         return color + (pixel * pixelFactor) + (line * lineFactor) + (frame * frameFactor);
     }
 
+    public void setAnimationPixel(int pixelIndex, byte[] rbgColorArray) {
+        animation[pixelIndex] = rbgColorArray[0];
+        animation[pixelIndex + 1] = rbgColorArray[1];
+        animation[pixelIndex + 2] = rbgColorArray[2];
+    }
+
     /**
      * Logic to set state to destroy/kill any previous animation
      */
@@ -312,13 +318,15 @@ public class MainActivity extends AppCompatActivity {
         animationSetup(60);
 
         byte[] nextColor;
+        int lineFactor;
 
         for (int frame = 0; frame < numFrames; frame++) {
             for (int line = 0; line < NUMLINES; line++) {
                 for (int pixel = 0; pixel < NUMPIXELS; pixel++) {
                     nextColor = new byte[3];
+                    lineFactor = Math.abs(line - 3);
 
-                    int colorCheck = (pixel + frame + line) % 3;
+                    int colorCheck = (pixel + frame + lineFactor) % 9 / 3;
                     if (colorCheck == 2) {
                         nextColor[0] = 100;
                         nextColor[1] = 0;
@@ -334,9 +342,7 @@ public class MainActivity extends AppCompatActivity {
                     }
 
                     int pixelIndex = getAnimationIndex(frame, line, pixel, 0);
-                    animation[pixelIndex] = nextColor[0];
-                    animation[pixelIndex + 1] = nextColor[1];
-                    animation[pixelIndex + 2] = nextColor[2];
+                    setAnimationPixel(pixelIndex, nextColor);
                 }
             }
         }
@@ -355,9 +361,7 @@ public class MainActivity extends AppCompatActivity {
                     byte colorByte = (byte) ((pixel + frame * 4) & 0xFF);
                     byte nextColors[] = Wheel(colorByte);
                     int pixelIndex = getAnimationIndex(frame, line, pixel, 0);
-                    animation[pixelIndex] = nextColors[0];
-                    animation[pixelIndex + 1] = nextColors[1];
-                    animation[pixelIndex + 2] = nextColors[2];
+                    setAnimationPixel(pixelIndex, nextColors);
                 }
             }
         }
