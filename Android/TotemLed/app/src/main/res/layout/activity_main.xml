@@ -12,104 +12,97 @@
 
     <EditText
         android:id="@+id/editText"
-        android:layout_width="333dp"
+        android:layout_width="0dp"
         android:layout_height="34dp"
-        android:layout_marginEnd="8dp"
-        android:layout_marginLeft="8dp"
-        android:layout_marginRight="8dp"
-        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
     <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Begin"
         android:id="@+id/buttonStart"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
         android:onClick="onClickStart"
+        android:text="Begin"
+        app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/editText"
-        app:layout_constraintLeft_toLeftOf="parent" />
+        app:layout_constraintTop_toBottomOf="@+id/editText" />
 
     <Button
         android:id="@+id/buttonSend"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
         android:onClick="onClickSend"
         android:text="Send"
         app:layout_constraintLeft_toRightOf="@+id/buttonStart"
-        app:layout_constraintTop_toBottomOf="@+id/editText"
-        app:layout_constraintStart_toEndOf="@+id/buttonStart" />
+        app:layout_constraintStart_toEndOf="@+id/buttonStart"
+        app:layout_constraintTop_toBottomOf="@+id/editText" />
 
     <TextView
         android:id="@+id/textView"
         android:layout_width="0dp"
-        android:layout_height="0dp"
+        android:layout_height="100dp"
         android:layout_marginEnd="8dp"
         android:layout_marginLeft="8dp"
         android:layout_marginRight="8dp"
         android:layout_marginStart="8dp"
-        android:layout_marginTop="20dp"
         android:scrollbars="vertical"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintRight_toRightOf="@+id/editText"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/rainbowCycleButton"
-        app:layout_constraintVertical_bias="1.0" />
+        app:layout_constraintStart_toStartOf="parent" />
 
     <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Stop"
         android:id="@+id/buttonStop"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
         android:onClick="onClickStop"
+        android:text="Stop"
         app:layout_constraintLeft_toRightOf="@+id/buttonSend"
-        app:layout_constraintTop_toBottomOf="@+id/editText"
-        app:layout_constraintStart_toEndOf="@+id/buttonSend" />
+        app:layout_constraintStart_toEndOf="@+id/buttonSend"
+        app:layout_constraintTop_toBottomOf="@+id/editText" />
 
     <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Clear"
         android:id="@+id/buttonClear"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
         android:onClick="onClickClear"
+        android:text="Clear"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintLeft_toRightOf="@+id/buttonStop"
-        app:layout_constraintTop_toBottomOf="@+id/editText"
-        app:layout_constraintStart_toEndOf="@+id/buttonStop" />
+        app:layout_constraintStart_toEndOf="@+id/buttonStop"
+        app:layout_constraintTop_toBottomOf="@+id/editText" />
 
     <Button
         android:id="@+id/rainbowTrailButton"
         android:layout_width="0dp"
-        android:layout_height="46dp"
-        android:layout_marginEnd="8dp"
-        android:layout_marginLeft="8dp"
-        android:layout_marginRight="8dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="20dp"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="4dp"
+        android:layout_marginStart="4dp"
+        android:layout_marginTop="4dp"
         android:onClick="onClickRainbowTrail"
         android:text="@string/button_rainbow_trail"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/rgbTrailButton" />
+        app:layout_constraintStart_toStartOf="@+id/buttonStop"
+        app:layout_constraintTop_toBottomOf="@+id/buttonClear" />
 
     <Button
         android:id="@+id/rgbTrailButton"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginEnd="8dp"
-        android:layout_marginLeft="8dp"
-        android:layout_marginRight="8dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="10dp"
+        android:layout_marginEnd="4dp"
+        android:layout_marginRight="4dp"
+        android:layout_marginTop="4dp"
         android:onClick="onClickRgbTrail"
         android:text="@string/button_rgb_trail"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/buttonStop"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/buttonStart" />
 
@@ -117,35 +110,31 @@
         android:id="@+id/rainbowCycleButton"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginEnd="8dp"
-        android:layout_marginLeft="8dp"
-        android:layout_marginRight="8dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="20dp"
+        android:layout_marginEnd="4dp"
+        android:layout_marginRight="4dp"
+        android:layout_marginTop="8dp"
         android:onClick="onClickRainbowCycle"
         android:text="@string/button_rainbow_cycle"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/rainbowTrailButton"
         app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/rainbowTrailButton" />
+        app:layout_constraintTop_toBottomOf="@+id/rgbTrailButton" />
 
     <Button
         android:id="@+id/treeButton"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginEnd="8dp"
-        android:layout_marginLeft="8dp"
-        android:layout_marginRight="8dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="20dp"
+        android:layout_marginLeft="4dp"
+        android:layout_marginStart="4dp"
+        android:layout_marginTop="8dp"
         android:onClick="onClickTree"
         android:text="tree"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/rainbowCycleButton" />
+        app:layout_constraintStart_toEndOf="@+id/rainbowCycleButton"
+        app:layout_constraintTop_toBottomOf="@+id/rainbowTrailButton" />
 
 
 </android.support.constraint.ConstraintLayout>
