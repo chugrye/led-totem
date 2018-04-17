@@ -45,7 +45,7 @@ public class MainActivity extends Activity {
     public boolean killFrame = false;
     public int numFrames;
     public int currentFrame;
-    byte [][][][] animation;
+    byte [] animation;
 
     UsbSerialInterface.UsbReadCallback serialReadCallback = new UsbSerialInterface.UsbReadCallback() { //Defining a Callback which triggers whenever data is read.
         @Override
@@ -203,6 +203,13 @@ public class MainActivity extends Activity {
         textView.scrollTo(0,0);
     }
 
+    public int getAnimationIndex(int frame, int line, int pixel, int color) {
+        int pixelFactor = NUMCOLORS;
+        int lineFactor = NUMCOLORS * NUMPIXELS;
+        int frameFactor = NUMCOLORS * NUMPIXELS * NUMLINES;
+        return color + (pixel * pixelFactor) + (line * lineFactor) + (frame * frameFactor);
+    }
+
     /**
      * Logic to set state to destroy/kill any previous animation
      */
@@ -218,7 +225,7 @@ public class MainActivity extends Activity {
         DestroyAnimation();
         currentFrame = 0;
         numFrames = frameCount;
-        animation = new byte[numFrames][NUMLINES][NUMPIXELS][NUMCOLORS];
+        animation = new byte[numFrames * NUMLINES * NUMPIXELS * NUMCOLORS];
     }
 
     public void sendFrame(int frameSlice) {
@@ -266,7 +273,8 @@ public class MainActivity extends Activity {
             {
                 for (int color = 0; color < NUMCOLORS; color++)
                 {
-                    frameByte[iterator] = animation[currentFrame][line][pixel][color];
+                    int colorIndex = getAnimationIndex(currentFrame, line, pixel, color);
+                    frameByte[iterator] = animation[colorIndex];
                     iterator++;
                 }
             }
@@ -299,13 +307,17 @@ public class MainActivity extends Activity {
                         nextColor[2] = 100;
                     }
 
-                    animation[frame][line][pixel] = nextColor;
+                    int pixelIndex = getAnimationIndex(frame, line, pixel, 0);
+                    animation[pixelIndex] = nextColor[0];
+                    animation[pixelIndex + 1] = nextColor[1];
+                    animation[pixelIndex + 2] = nextColor[2];
                 }
             }
         }
         sendClear();
     }
 
+    // TODO: Revisit this animation (might not need it any longer in favor of RainbowCycle
     public void onClickRainbowTrail(View view) {
         animationSetup(256 / 4);
 
@@ -315,7 +327,11 @@ public class MainActivity extends Activity {
             for (line = 0; line < NUMLINES; line++) {
                 for (pixel = 0; pixel < NUMPIXELS; pixel++) {
                     byte colorByte = (byte) ((pixel + frame * 4) & 0xFF);
-                    animation[frame][line][pixel] = Wheel(colorByte);
+                    byte nextColors[] = Wheel(colorByte);
+                    int pixelIndex = getAnimationIndex(frame, line, pixel, 0);
+                    animation[pixelIndex] = nextColors[0];
+                    animation[pixelIndex + 1] = nextColors[1];
+                    animation[pixelIndex + 2] = nextColors[2];
                 }
             }
         }
@@ -329,25 +345,6 @@ public class MainActivity extends Activity {
         serialPort.write(header);
     }
 
-    // TODO: Revisit this animation (might not need it any longer in favor of RainbowCycle
-
-    // Rainbow Cycle Program - Equally distributed
-    public void onClickRainbowTrailCycle(View view) {
-        animationSetup(256 / 4);
-
-        int frame, line, pixel;
-
-        for(frame=0; frame < numFrames; frame++) {
-            for (line = 0; line < NUMLINES; line++) {
-                for (pixel = 0; pixel < NUMPIXELS; pixel++) {
-                    animation[frame][line][pixel] = Wheel((byte) (((pixel * 256 / NUMPIXELS) + frame) & 255));
-                }
-            }
-        }
-
-        sendFrame(currentFrame);
-    }
-
     public void onClickTree(View view) {
         try {
             playAnimationFromFile(getAssets().open("test.bin"));
@@ -356,7 +353,6 @@ public class MainActivity extends Activity {
             Log.e("uh oh", e.getMessage());
         }
     }
-
 
     // Input a value 0 to 255 to get a color value.
     // The colours are a transition r - g - b - back to r.
@@ -391,29 +387,19 @@ public class MainActivity extends Activity {
     }
 
     private void playAnimationFromFile(InputStream fileInputStream) throws IOException{
+        int bytesInFrame = NUMLINES * NUMPIXELS * NUMCOLORS;
+        // TODO: Might need to refactor this method but here are steps
+        // #1: get byte array from binary file
+        // #2: calculate number of frames the file had for that animation
+        // #3: initialize the animation variables
+        byte[] fileAnimation = ByteStreams.toByteArray(fileInputStream);
+        // Using Math.ceil( ) here in case this is a fraction for some reason to account for last frame
+        int frameCount = (int)Math.ceil((double) fileAnimation.length / bytesInFrame);
 
-        int bytesInFrame = 630;
-        byte[] animation = ByteStreams.toByteArray(fileInputStream);
-        int length = animation.length;
-        Log.i("ok", "length:" + length);
-        byte[] frame = new byte[bytesInFrame];
-        int frameArrayCounter = 0;
-        while(true) {
-            for (int rgbValue = 0; rgbValue < animation.length; rgbValue++) {
-                if (frameArrayCounter < bytesInFrame) {
-                    frame[frameArrayCounter] = animation[rgbValue];
-                    frameArrayCounter++;
-                } else {
-                    sendFrame(frame);
-                    frameArrayCounter = 0;
-                    frame = new byte[bytesInFrame];
-                    try {
-                        Thread.sleep(250);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        }
+        animationSetup(frameCount);
+        animation = fileAnimation;
+
+        // send clear and start animation
+        sendClear();
     }
 }
