@@ -227,13 +227,17 @@ public class MainActivity extends Activity {
         if (frameSlice >= numFrames) {
             return;
         }
-        byte[] header = new byte[] { (byte)0x01 };
         byte[] frameByte = animationToOneDimensionalArray();
-        byte[] footer = new byte[] { (byte)0x00 };
+        sendFrame(frameByte);
+    }
 
+    public void sendFrame(byte[] frame)
+    {
+        byte[] header = new byte[] { (byte)0x01 };
+        byte[] footer = new byte[] { (byte)0x00 };
         if (!killFrame) {
             serialPort.write(header);
-            serialPort.write(frameByte);
+            serialPort.write(frame);
             serialPort.write(footer);
         } else {
             // If we just killed animation frame this state can be reset
@@ -248,22 +252,6 @@ public class MainActivity extends Activity {
         byte[] header = new byte[] { (byte)0x03 };
         serialPort.write(header);
     }
-
-    public void sendFrame(byte[] frame)
-    {
-        //Console.WriteLine(frameByte.Length);
-        byte[] header = new byte[] { 0x01 };//, (byte)(test.Length/3)};
-        byte[] footer = new byte[] { 0x00 };
-
-        //Console.WriteLine("writing data");
-        //tvAppend(textView, "Writing data - frame" + currentFrame + "\n");
-        serialPort.write(header);
-        serialPort.write(frame);
-        serialPort.write(footer);
-        //serialPort.ReadByte();
-    }
-
-
 
     /**
      * Convert our animation multidimensional array into single dimension
@@ -406,7 +394,8 @@ public class MainActivity extends Activity {
 
         int bytesInFrame = 630;
         byte[] animation = ByteStreams.toByteArray(fileInputStream);
-        Log.i("ok", "got here");
+        int length = animation.length;
+        Log.i("ok", "length:" + length);
         byte[] frame = new byte[bytesInFrame];
         int frameArrayCounter = 0;
         while(true) {
