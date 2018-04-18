@@ -10,26 +10,21 @@
 #define LEDPIN7            8
 
 #define NUMPIXELS     30 
-#define NUMLINES	  7
+#define NUMLINES      7
 CRGB leds[NUMLINES][NUMPIXELS];
 
 void setup() {
-#if defined (__AVR_ATtiny85__)
-  if (F_CPU == 16000000) clock_prescale_set(clock_div_1);
-#endif
-FastLED.addLeds<NEOPIXEL, LEDPIN1>(leds[0], NUMPIXELS);
-FastLED.addLeds<NEOPIXEL, LEDPIN2>(leds[1], NUMPIXELS);
-FastLED.addLeds<NEOPIXEL, LEDPIN3>(leds[2], NUMPIXELS);
-FastLED.addLeds<NEOPIXEL, LEDPIN4>(leds[3], NUMPIXELS);
-FastLED.addLeds<NEOPIXEL, LEDPIN5>(leds[4], NUMPIXELS);
-FastLED.addLeds<NEOPIXEL, LEDPIN6>(leds[5], NUMPIXELS);
-FastLED.addLeds<NEOPIXEL, LEDPIN7>(leds[6], NUMPIXELS);
+	FastLED.addLeds<NEOPIXEL, LEDPIN1>(leds[0], NUMPIXELS);
+	FastLED.addLeds<NEOPIXEL, LEDPIN2>(leds[1], NUMPIXELS);
+	FastLED.addLeds<NEOPIXEL, LEDPIN3>(leds[2], NUMPIXELS);
+	FastLED.addLeds<NEOPIXEL, LEDPIN4>(leds[3], NUMPIXELS);
+	FastLED.addLeds<NEOPIXEL, LEDPIN5>(leds[4], NUMPIXELS);
+	FastLED.addLeds<NEOPIXEL, LEDPIN6>(leds[5], NUMPIXELS);
+	FastLED.addLeds<NEOPIXEL, LEDPIN7>(leds[6], NUMPIXELS);
 
-	// Open serial port and tell the controller we're ready.
+	// Open serial port
 	Serial.begin(115200);
 }
-
-bool showFrame = false;
 
 int errorCount = 0;
 byte byteReadCount = 0;
@@ -75,6 +70,8 @@ void loop() {
 			}
 		}
 		if (animReadError) {
+			//TODO: we can remove this if we send a header set of bytes to look for
+			// but for now clear the serial buffer and then just let the user resend
 			while (Serial.available() > 0) {
 				Serial.read();
 			}
@@ -103,32 +100,32 @@ void rainbowCycleAnimation() {
 	byte rainbowTrailFrameCount = 0;
 	byte red, green, blue;
 	while (Serial.available() == 0) {
-    for (byte line = 0; line < NUMLINES; line++) {
-  		for (byte pixel = 0; pixel < NUMPIXELS; pixel++)
-  		{
-  			byte factor = rainbowTrailFrameCount + pixel;
-  			byte index = (factor / 15) % 3;
-  			byte val = (factor % 15) * 17;
-  			if (index == 0) {
-  				red = val;
-  				green = 255 - val;
-  				blue = 0;
-  			}
-  			else if (index == 1) {
-  				red = 255 - val;
-  				green = 0;
-  				blue = val;
-  			}
-  			else if (index == 2) {
-  				red = 0;
-  				green = val;
-  				blue = 255 - val;
-  			}
-  			leds[line][pixel].r = red;
-  			leds[line][pixel].g = green;
-  			leds[line][pixel].b = blue;
-  		}
-    }
+	for (byte line = 0; line < NUMLINES; line++) {
+		for (byte pixel = 0; pixel < NUMPIXELS; pixel++)
+		{
+			byte factor = rainbowTrailFrameCount + pixel;
+			byte index = (factor / 15) % 3;
+			byte val = (factor % 15) * 17;
+			if (index == 0) {
+				red = val;
+				green = 255 - val;
+				blue = 0;
+			}
+			else if (index == 1) {
+				red = 255 - val;
+				green = 0;
+				blue = val;
+			}
+			else if (index == 2) {
+				red = 0;
+				green = val;
+				blue = 255 - val;
+			}
+			leds[line][pixel].r = red;
+			leds[line][pixel].g = green;
+			leds[line][pixel].b = blue;
+		}
+	}
 		FastLED.show();
 		rainbowTrailFrameCount++;
 		rainbowTrailFrameCount = rainbowTrailFrameCount % 45;
