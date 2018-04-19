@@ -39,7 +39,7 @@ public class MainActivity extends AppCompatActivity {
     public final int FRAMES_PER_SECOND = 15;
     public final int DELAY = 1000 / FRAMES_PER_SECOND;
     Button startButton, sendButton, clearButton, stopButton;
-    Button rgbTrailButton, rainbowTrailButton, rainbowCycleButton;
+    Button rgbTrailButton, rainbowTrailButton, rainbowCycleButton, treeButton;
     TextView textView;
     EditText editText;
     UsbManager usbManager;
@@ -165,6 +165,7 @@ public class MainActivity extends AppCompatActivity {
         rgbTrailButton = (Button) findViewById(R.id.rgbTrailButton);
         rainbowTrailButton = (Button) findViewById(R.id.rainbowTrailButton);
         rainbowCycleButton = (Button) findViewById(R.id.rainbowCycleButton);
+        treeButton = (Button) findViewById(R.id.treeButton);
         editText = (EditText) findViewById(R.id.editText);
         textView = (TextView) findViewById(R.id.textView);
         textView.setMovementMethod(new ScrollingMovementMethod());
@@ -183,6 +184,7 @@ public class MainActivity extends AppCompatActivity {
         rgbTrailButton.setEnabled(bool);
         rainbowTrailButton.setEnabled(bool);
         rainbowCycleButton.setEnabled(bool);
+        treeButton.setEnabled(bool);
         textView.setEnabled(bool);
     }
 
@@ -242,9 +244,17 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
+     * get header for all serial communication
+     * @return
+     */
+    public byte[] serialHeader() {
+        return new byte[] { (byte)0xDE, (byte)0xAD, (byte)0xBE, (byte)0xEF };
+    }
+
+    /**
      * Logic to set state to destroy/kill any previous animation
      */
-    public void DestroyAnimation() {
+    public void destroyAnimation() {
         killFrame = true;
     }
 
@@ -253,7 +263,7 @@ public class MainActivity extends AppCompatActivity {
      * @param frameCount total number of frames that will be rendered
      */
     public void animationSetup(int frameCount) {
-        DestroyAnimation();
+        destroyAnimation();
         currentFrame = 0;
         numFrames = frameCount;
         animation = new byte[numFrames * NUMLINES * NUMPIXELS * NUMCOLORS];
@@ -263,8 +273,8 @@ public class MainActivity extends AppCompatActivity {
         // Only send frame if there are any available
         // otherwise just return
         if (frameSlice >= numFrames) {
+            // restart animation a start
             currentFrame = 0;
-            frameSlice = currentFrame;
         }
         byte[] frameByte = animationToOneDimensionalArray();
         sendFrame(frameByte);
@@ -272,12 +282,16 @@ public class MainActivity extends AppCompatActivity {
 
     public void sendFrame(byte[] frame)
     {
-        byte[] header = new byte[] { (byte)0x01 };
-        byte[] footer = new byte[] { (byte)0x00 };
+        byte[] header = serialHeader();
+        byte[] setFrameCommand = new byte[] { (byte)0x01 };
+        byte[] drawFrameCommand = new byte[] { (byte)0x00 };
         if (!killFrame) {
             serialPort.write(header);
+            serialPort.write(setFrameCommand);
             serialPort.write(frame);
-            serialPort.write(footer);
+
+            serialPort.write(header);
+            serialPort.write(drawFrameCommand);
         } else {
             // If we just killed animation frame this state can be reset
             killFrame = false;
@@ -288,8 +302,10 @@ public class MainActivity extends AppCompatActivity {
      * Send command to clear LED strip and proceed with next animation
      */
     public void sendClear() {
-        byte[] header = new byte[] { (byte)0x03 };
+        byte[] header = serialHeader();
+        byte[] clearFrameCommand = new byte[] { (byte)0x03 };;
         serialPort.write(header);
+        serialPort.write(clearFrameCommand);
     }
 
     /**
@@ -314,8 +330,13 @@ public class MainActivity extends AppCompatActivity {
         return frameByte;
     }
 
+    public int modulusNumber(int value, int divisor) {
+        // done this way to account for negative numbers since % just gives remainder
+        return (((value % divisor) + divisor) % divisor);
+    }
+
     public void onClickRgbTrail(View view) {
-        animationSetup(60);
+        animationSetup(45);
 
         byte[] nextColor;
         int lineFactor;
@@ -326,7 +347,7 @@ public class MainActivity extends AppCompatActivity {
                     nextColor = new byte[3];
                     lineFactor = Math.abs(line - 3);
 
-                    int colorCheck = (pixel + frame + lineFactor) % 9 / 3;
+                    int colorCheck = modulusNumber(pixel - frame + lineFactor, 9) / 3;
                     if (colorCheck == 2) {
                         nextColor[0] = 100;
                         nextColor[1] = 0;
@@ -349,19 +370,50 @@ public class MainActivity extends AppCompatActivity {
         sendClear();
     }
 
+    public byte[] rainbowColor(int numIntervals, int currentIndex) {
+        byte[] rgbResult;
+        int numSubIntervals = (int)Math.ceil((double)numIntervals / 3);
+        // make sure numIntervals is power of 3
+        numIntervals = numSubIntervals * 3;
+
+        double rgbInterval = (double)255 / numSubIntervals;
+
+        // Make sure currentIndex is less than numIntervals
+        currentIndex = currentIndex % numIntervals;
+        int rgbChoice = (currentIndex / numSubIntervals) % 3;
+        int subIntervalIndex = (currentIndex % numSubIntervals);
+        byte val = (byte)Math.min(rgbInterval * subIntervalIndex, 255);
+        if (rgbChoice == 0) {
+            rgbResult = new byte[] { val, (byte)(255 - val), 0 };
+        }
+        else if (rgbChoice == 1) {
+            rgbResult = new byte[] { (byte)(255 - val), 0, val };
+        }
+        else {
+            rgbResult = new byte[] { 0, val, (byte)(255 - val) };
+        }
+        return rgbResult;
+    }
+
     // TODO: Revisit this animation (might not need it any longer in favor of RainbowCycle
     public void onClickRainbowTrail(View view) {
-        animationSetup(256 / 4);
+        byte[] nextColor;
+        int lineFactor, pixelFactor;
+//        int estimateNumFrames = 20;
+        animationSetup(21);
 
         int frame, line, pixel;
-
-        for(frame=0; frame < numFrames; frame++) {
+        for (frame = 0; frame < numFrames; frame++) {
             for (line = 0; line < NUMLINES; line++) {
                 for (pixel = 0; pixel < NUMPIXELS; pixel++) {
-                    byte colorByte = (byte) ((pixel + frame * 4) & 0xFF);
-                    byte nextColors[] = Wheel(colorByte);
+                    lineFactor = Math.abs(line - 3);
+                    pixelFactor = Math.abs(pixel - 15);
+
+                    int colorIndex = modulusNumber(pixelFactor - frame + lineFactor, numFrames);
+                    nextColor = rainbowColor(numFrames, colorIndex);
+
                     int pixelIndex = getAnimationIndex(frame, line, pixel, 0);
-                    setAnimationPixel(pixelIndex, nextColors);
+                    setAnimationPixel(pixelIndex, nextColor);
                 }
             }
         }
@@ -370,14 +422,16 @@ public class MainActivity extends AppCompatActivity {
 
     // Rainbow Cycle Program - Equally distributed
     public void onClickRainbowCycle(View view) {
-        DestroyAnimation();
-        byte[] header = new byte[] { (byte)254 };
+        destroyAnimation();
+        byte[] header = serialHeader();
+        byte[] rainbowCycleCommand = new byte[] { (byte)254 };
         serialPort.write(header);
+        serialPort.write(rainbowCycleCommand);
     }
 
     public void onClickTree(View view) {
         try {
-            playAnimationFromFile(getAssets().open("test.bin"));
+            playAnimationFromFile(getAssets().open("tree2.bin"));
         }catch(IOException e)
         {
             Log.e("uh oh", e.getMessage());

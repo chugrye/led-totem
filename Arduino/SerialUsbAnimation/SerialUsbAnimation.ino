@@ -13,6 +13,8 @@
 #define NUMLINES      7
 CRGB leds[NUMLINES][NUMPIXELS];
 
+const byte header[4] = { 0xDE, 0xAD, 0xBE, 0xEF };
+
 void setup() {
 	FastLED.addLeds<NEOPIXEL, LEDPIN1>(leds[0], NUMPIXELS);
 	FastLED.addLeds<NEOPIXEL, LEDPIN2>(leds[1], NUMPIXELS);
@@ -32,9 +34,25 @@ bool animReadError = false;
 
 byte pixelBuffer[3];
 void loop() {
-	// Read a command
-	while (Serial.available() == 0);
-	byte command = Serial.read();
+	byte command;
+	byte headerCount = 0;
+	while (true) {
+		while (Serial.available() == 0);
+		byte b = Serial.read();
+		if (b == header[headerCount]) {
+			headerCount++;
+		}
+		else {
+			headerCount = 0;
+		}
+
+		// If true, we found the header so read in the command and break loop
+		if (headerCount >= sizeof(header)) {
+			while (Serial.available() == 0);
+			command = Serial.read();
+			break;
+		}
+	}
 
 	switch (command)
 	{
