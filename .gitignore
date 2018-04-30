@@ -39,3 +39,9 @@ Thumbs.db
 .gradle
 build/
 */build/
+
+# Visual Studio Arduino
+__vm/
+Debug/
+Release/
+Arduino/**/*.vcxproj*

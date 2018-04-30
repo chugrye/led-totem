@@ -9,7 +9,7 @@
 #define LEDPIN6            7
 #define LEDPIN7            8
 
-#define NUMPIXELS     30 
+#define NUMPIXELS     30
 #define NUMLINES      7
 CRGB leds[NUMLINES][NUMPIXELS];
 
@@ -31,119 +31,140 @@ void setup() {
 int errorCount = 0;
 byte byteReadCount = 0;
 bool animReadError = false;
+uint8_t brightnessVal = 20;
 
 byte pixelBuffer[3];
 void loop() {
-	byte command;
+	byte b;
 	byte headerCount = 0;
+	byte command;
 	while (true) {
 		while (Serial.available() == 0);
-		byte b = Serial.read();
+		b = Serial.read();
 		if (b == header[headerCount]) {
 			headerCount++;
 		}
+		else if (b == header[0]) {
+			headerCount = 1;
+		}
 		else {
 			headerCount = 0;
+			b = 0;
 		}
 
 		// If true, we found the header so read in the command and break loop
-		if (headerCount >= sizeof(header)) {
+		if (headerCount == sizeof(header)) {
 			while (Serial.available() == 0);
 			command = Serial.read();
 			break;
 		}
 	}
 
+
+	//command = 0xFE;
 	switch (command)
 	{
 		// Show frame
-	case 0x00:
-		// Update LEDs
-		FastLED.show();
+		case 0x00:
+			// Update LEDs
+			FastLED.show();
 
-		// Tell the controller we're ready
-		// We don't want to be receiving serial data during leds.show() because data will be dropped
-		Serial.write(0x00);
-		break;
+			// Tell the controller we're ready
+			// We don't want to be receiving serial data during leds.show() because data will be dropped
+			Serial.write(0x00);
+			break;
 
 		// Load frame
-	case 0x01:
-		// Read and update pixels
-		for (int line = 0; line < NUMLINES; line++)
-		{
-			for (int pixel = 0; pixel < NUMPIXELS; pixel++)
+		case 0x01:
+			while (Serial.available() == 0);
+			// Read and update pixels
+			for (int line = 0; line < NUMLINES; line++)
 			{
-				byteReadCount = Serial.readBytes(pixelBuffer, 3);
-				if (byteReadCount < 3) {
-					errorCount++;
-					leds[line][pixel].r = 0;
-					leds[line][pixel].g = 0;
-					leds[line][pixel].b = 0;
-					animReadError = true;
-					break;
+				for (int pixel = 0; pixel < NUMPIXELS; pixel++)
+				{
+					byteReadCount = Serial.readBytes(pixelBuffer, 3);
+					if (byteReadCount < 3) {
+						errorCount++;
+						leds[line][pixel].r = 0;
+						leds[line][pixel].g = 0;
+						leds[line][pixel].b = 0;
+						animReadError = true;
+						break;
+					}
+					leds[line][pixel].r = pixelBuffer[0];
+					leds[line][pixel].g = pixelBuffer[1];
+					leds[line][pixel].b = pixelBuffer[2];
 				}
-				leds[line][pixel].r = pixelBuffer[0];
-				leds[line][pixel].g = pixelBuffer[1];
-				leds[line][pixel].b = pixelBuffer[2];
 			}
-		}
-		if (animReadError) {
-			//TODO: we can remove this if we send a header set of bytes to look for
-			// but for now clear the serial buffer and then just let the user resend
-			while (Serial.available() > 0) {
-				Serial.read();
-			}
-			Serial.write(0xAA);
-			Serial.print("E:");
-			Serial.print(errorCount);
-		}
-		break;
+			//if (animReadError) {
+			//	//TODO: we can remove this if we send a header set of bytes to look for
+			//	// but for now clear the serial buffer and then just let the user resend
+			//	while (Serial.available() > 0) {
+			//		Serial.read();
+			//	}
+			//	Serial.write(0xAA);
+			//	Serial.print("E:");
+			//	Serial.print(errorCount);
+			//}
+			break;
+
+		// Settings start at 0x40
+
+		// Brightness
+		case 0x40:
+			b = Serial.read();
+			brightnessVal = getBrightnessFromScale(b);
+			FastLED.setBrightness(brightnessVal);
+			break;
 
 		// Rainbow Cycle
-	case 0xFE:
-		rainbowCycleAnimation();
-		break;
+		case 0xFE:
+			rainbowCycleAnimation();
+			break;
 
 		// Clear
-	case 0x03:
-		animReadError = false;
-		FastLED.clear();
-		FastLED.show();
-		Serial.write(0x03);
-		break;
+		case 0x03:
+			animReadError = false;
+			FastLED.clear();
+			FastLED.show();
+			Serial.write(0x03);
+			break;
 	}
+}
+
+uint8_t getBrightnessFromScale(byte scaleVal) {
+	return scaleVal * (255 / 100);
 }
 
 void rainbowCycleAnimation() {
 	byte rainbowTrailFrameCount = 0;
 	byte red, green, blue;
 	while (Serial.available() == 0) {
-	for (byte line = 0; line < NUMLINES; line++) {
-		for (byte pixel = 0; pixel < NUMPIXELS; pixel++)
-		{
-			byte factor = rainbowTrailFrameCount + pixel;
-			byte index = (factor / 15) % 3;
-			byte val = (factor % 15) * 17;
-			if (index == 0) {
-				red = val;
-				green = 255 - val;
-				blue = 0;
+		for (byte line = 0; line < NUMLINES; line++) {
+			for (byte pixel = 0; pixel < NUMPIXELS; pixel++) {
+				byte factor = rainbowTrailFrameCount + pixel;
+				byte index = (factor / 15) % 3;
+				byte val = (factor % 15) * 17;
+				if (index == 0) {
+					red = val;
+					green = 255 - val;
+					blue = 0;
+				}
+				else if (index == 1) {
+					red = 255 - val;
+					green = 0;
+					blue = val;
+				}
+				else if (index == 2) {
+					red = 0;
+					green = val;
+					blue = 255 - val;
+				}
+				leds[line][pixel].r = red;
+				leds[line][pixel].g = green;
+				leds[line][pixel].b = blue;
 			}
-			else if (index == 1) {
-				red = 255 - val;
-				green = 0;
-				blue = val;
-			}
-			else if (index == 2) {
-				red = 0;
-				green = val;
-				blue = 255 - val;
-			}
-			leds[line][pixel].r = red;
-			leds[line][pixel].g = green;
-			leds[line][pixel].b = blue;
 		}
-	}
 		FastLED.show();
 		rainbowTrailFrameCount++;
 		rainbowTrailFrameCount = rainbowTrailFrameCount % 45;

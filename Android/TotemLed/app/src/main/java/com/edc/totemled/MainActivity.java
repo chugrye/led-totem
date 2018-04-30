@@ -5,10 +5,12 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbManager;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
@@ -31,13 +33,15 @@ import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Map;
 
+import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
+
 public class MainActivity extends AppCompatActivity {
     public final String ACTION_USB_PERMISSION = "com.edc.totemled.USB_PERMISSION";
     public final int NUMLINES = 7;
     public final int NUMPIXELS = 30;
     public final int NUMCOLORS = 3;
-    public final int FRAMES_PER_SECOND = 15;
-    public final int DELAY = 1000 / FRAMES_PER_SECOND;
+    public int brightness;
+    public int framesPerSecond;
     Button startButton, sendButton, clearButton, stopButton;
     Button rgbTrailButton, rainbowTrailButton, rainbowCycleButton, treeButton;
     TextView textView;
@@ -57,8 +61,12 @@ public class MainActivity extends AppCompatActivity {
             try {
                 // Render next frame
                 if (arg0[0] == (byte)0x00) {
+                    if (killFrame) {
+                        killFrame = false;
+                        return;
+                    }
                     try {
-                        Thread.sleep(DELAY);
+                        Thread.sleep(getAnimationDelay());
 
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -80,7 +88,7 @@ public class MainActivity extends AppCompatActivity {
                 // Cleared / start animation
                 if (arg0[0] == (byte)0x03) {
                     try {
-                        Thread.sleep(DELAY);
+                        Thread.sleep(getAnimationDelay());
 
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -132,6 +140,21 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
+    private OnSharedPreferenceChangeListener listener =
+            new OnSharedPreferenceChangeListener() {
+                @Override
+                public void onSharedPreferenceChanged(SharedPreferences prefs, String key) {
+                    if (key.equals("pref_brightness")) {
+                        int value = prefs.getInt(key, 15);
+                        brightness = value;
+                        sendBrightness();
+                    } else if (key.equals("example_list")) {
+                        int value = Integer.parseInt(prefs.getString(key, "15"));
+                        framesPerSecond = value;
+                    }
+                }
+            };
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
@@ -142,11 +165,16 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-            case R.id.item_animations:
-                Toast.makeText(this, "Animations", Toast.LENGTH_SHORT).show();
-                return true;
-            case R.id.item_features:
-                Toast.makeText(this, "Features", Toast.LENGTH_SHORT).show();
+//            case R.id.item_animations:
+//                Toast.makeText(this, "Animations", Toast.LENGTH_SHORT).show();
+//                return true;
+//            case R.id.item_features:
+//                Toast.makeText(this, "Features", Toast.LENGTH_SHORT).show();
+//                return true;
+            case R.id.item_settings:
+                Toast.makeText(this, "Settings", Toast.LENGTH_SHORT).show();
+                Intent intent = new Intent(this, SettingsActivity.class);
+                startActivity(intent);
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
@@ -156,6 +184,17 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+//        PreferenceManager.setDefaultValues(this, R.xml.pref_general, false);
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        prefs.registerOnSharedPreferenceChangeListener(listener);
+
+        brightness = prefs.getInt("pref_brightness", 20);
+        framesPerSecond = Integer.parseInt(prefs.getString("example_list", "15"));
+
+        // Clears preferences on app load
+        prefs.edit().clear().commit();
+
         setContentView(R.layout.activity_main);
         usbManager = (UsbManager) getSystemService(this.USB_SERVICE);
         startButton = (Button) findViewById(R.id.buttonStart);
@@ -177,6 +216,13 @@ public class MainActivity extends AppCompatActivity {
         registerReceiver(broadcastReceiver, filter);
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        prefs.unregisterOnSharedPreferenceChangeListener(listener);
+    }
+
     public void setUiEnabled(boolean bool) {
         startButton.setEnabled(!bool);
         sendButton.setEnabled(bool);
@@ -186,6 +232,10 @@ public class MainActivity extends AppCompatActivity {
         rainbowCycleButton.setEnabled(bool);
         treeButton.setEnabled(bool);
         textView.setEnabled(bool);
+    }
+
+    public int getAnimationDelay() {
+        return 1000 / framesPerSecond;
     }
 
     public void onClickStart(View view) {
@@ -252,6 +302,18 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
+     * Send command to clear LED strip and proceed with next animation
+     */
+    public void sendBrightness() {
+        byte[] header = serialHeader();
+        byte[] clearFrameCommand = new byte[] { (byte)0x40 };
+        byte[] brightnessValue = new byte[] { (byte)brightness };;
+        serialPort.write(header);
+        serialPort.write(clearFrameCommand);
+        serialPort.write(brightnessValue);
+    }
+
+    /**
      * Logic to set state to destroy/kill any previous animation
      */
     public void destroyAnimation() {
@@ -303,7 +365,7 @@ public class MainActivity extends AppCompatActivity {
      */
     public void sendClear() {
         byte[] header = serialHeader();
-        byte[] clearFrameCommand = new byte[] { (byte)0x03 };;
+        byte[] clearFrameCommand = new byte[] { (byte)0x03 };
         serialPort.write(header);
         serialPort.write(clearFrameCommand);
     }
