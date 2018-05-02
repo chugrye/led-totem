@@ -1,10 +1,10 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
-
-    <SeekBarPreference
+    <ListPreference
+        android:defaultValue="50"
+        android:entries="@array/brightness_levels"
+        android:entryValues="@array/brightness_levels"
         android:key="pref_brightness"
-        android:title="@string/pref_title_brightness"
-        android:defaultValue="20"
-        android:max="100" />
+        android:title="@string/pref_title_brightness" />
 
     <SwitchPreference
         android:defaultValue="true"

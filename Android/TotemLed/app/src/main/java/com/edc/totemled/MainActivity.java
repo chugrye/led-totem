@@ -50,6 +50,7 @@ public class MainActivity extends AppCompatActivity {
     UsbDevice device;
     UsbSerialDevice serialPort;
     UsbDeviceConnection connection;
+    public boolean serialConnectionOpen = false;
     public boolean killFrame = false;
     public int numFrames;
     public int currentFrame;
@@ -113,6 +114,7 @@ public class MainActivity extends AppCompatActivity {
                     serialPort = UsbSerialDevice.createUsbSerialDevice(device, connection);
                     if (serialPort != null) {
                         if (serialPort.open()) { //Set Serial Connection Parameters.
+                            serialConnectionOpen = true;
                             setUiEnabled(true);
                             serialPort.setBaudRate(115200);
                             serialPort.setDataBits(UsbSerialInterface.DATA_BITS_8);
@@ -145,9 +147,12 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void onSharedPreferenceChanged(SharedPreferences prefs, String key) {
                     if (key.equals("pref_brightness")) {
-                        int value = prefs.getInt(key, 15);
+                        int value =  Integer.parseInt(prefs.getString(key, "50"));
                         brightness = value;
-                        sendBrightness();
+                        tvAppend(textView,"Brightness Update = " + brightness + "\n");
+                        if (isSerialConnectionOpen()) {
+                            sendBrightness();
+                        }
                     } else if (key.equals("example_list")) {
                         int value = Integer.parseInt(prefs.getString(key, "15"));
                         framesPerSecond = value;
@@ -189,7 +194,7 @@ public class MainActivity extends AppCompatActivity {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         prefs.registerOnSharedPreferenceChangeListener(listener);
 
-        brightness = prefs.getInt("pref_brightness", 20);
+        brightness = Integer.parseInt(prefs.getString("pref_brightness", "50"));
         framesPerSecond = Integer.parseInt(prefs.getString("example_list", "15"));
 
         // Clears preferences on app load
@@ -221,6 +226,10 @@ public class MainActivity extends AppCompatActivity {
         super.onDestroy();
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         prefs.unregisterOnSharedPreferenceChangeListener(listener);
+    }
+
+    public boolean isSerialConnectionOpen() {
+        return serialPort != null && serialConnectionOpen;
     }
 
     public void setUiEnabled(boolean bool) {
@@ -272,6 +281,7 @@ public class MainActivity extends AppCompatActivity {
     public void onClickStop(View view) {
         setUiEnabled(false);
         serialPort.close();
+        serialConnectionOpen = false;
         tvAppend(textView,"\nSerial Connection Closed! \n");
     }
 
@@ -294,21 +304,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
-     * get header for all serial communication
-     * @return
-     */
-    public byte[] serialHeader() {
-        return new byte[] { (byte)0xDE, (byte)0xAD, (byte)0xBE, (byte)0xEF };
-    }
-
-    /**
      * Send command to clear LED strip and proceed with next animation
      */
     public void sendBrightness() {
-        byte[] header = serialHeader();
         byte[] clearFrameCommand = new byte[] { (byte)0x40 };
         byte[] brightnessValue = new byte[] { (byte)brightness };;
-        serialPort.write(header);
         serialPort.write(clearFrameCommand);
         serialPort.write(brightnessValue);
     }
@@ -344,15 +344,12 @@ public class MainActivity extends AppCompatActivity {
 
     public void sendFrame(byte[] frame)
     {
-        byte[] header = serialHeader();
         byte[] setFrameCommand = new byte[] { (byte)0x01 };
         byte[] drawFrameCommand = new byte[] { (byte)0x00 };
         if (!killFrame) {
-            serialPort.write(header);
             serialPort.write(setFrameCommand);
             serialPort.write(frame);
 
-            serialPort.write(header);
             serialPort.write(drawFrameCommand);
         } else {
             // If we just killed animation frame this state can be reset
@@ -364,9 +361,7 @@ public class MainActivity extends AppCompatActivity {
      * Send command to clear LED strip and proceed with next animation
      */
     public void sendClear() {
-        byte[] header = serialHeader();
         byte[] clearFrameCommand = new byte[] { (byte)0x03 };
-        serialPort.write(header);
         serialPort.write(clearFrameCommand);
     }
 
@@ -485,9 +480,7 @@ public class MainActivity extends AppCompatActivity {
     // Rainbow Cycle Program - Equally distributed
     public void onClickRainbowCycle(View view) {
         destroyAnimation();
-        byte[] header = serialHeader();
         byte[] rainbowCycleCommand = new byte[] { (byte)254 };
-        serialPort.write(header);
         serialPort.write(rainbowCycleCommand);
     }
 

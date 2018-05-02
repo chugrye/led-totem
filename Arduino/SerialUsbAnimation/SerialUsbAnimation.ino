@@ -26,6 +26,9 @@ void setup() {
 
 	// Open serial port
 	Serial.begin(115200);
+
+	// Set initial brightness to 20%
+	FastLED.setBrightness(51);
 }
 
 int errorCount = 0;
@@ -34,32 +37,12 @@ bool animReadError = false;
 uint8_t brightnessVal = 20;
 
 byte pixelBuffer[3];
+int serialReadVal;
+int command;
+
 void loop() {
-	byte b;
-	byte headerCount = 0;
-	byte command;
-	while (true) {
-		while (Serial.available() == 0);
-		b = Serial.read();
-		if (b == header[headerCount]) {
-			headerCount++;
-		}
-		else if (b == header[0]) {
-			headerCount = 1;
-		}
-		else {
-			headerCount = 0;
-			b = 0;
-		}
-
-		// If true, we found the header so read in the command and break loop
-		if (headerCount == sizeof(header)) {
-			while (Serial.available() == 0);
-			command = Serial.read();
-			break;
-		}
-	}
-
+	while (Serial.available() == 0);
+	command = Serial.read();
 
 	//command = 0xFE;
 	switch (command)
@@ -112,9 +95,11 @@ void loop() {
 
 		// Brightness
 		case 0x40:
-			b = Serial.read();
-			brightnessVal = getBrightnessFromScale(b);
-			FastLED.setBrightness(brightnessVal);
+			serialReadVal = Serial.read();
+			if (serialReadVal != -1) {
+				brightnessVal = getBrightnessFromScale(serialReadVal);
+				FastLED.setBrightness(brightnessVal);
+			}
 			break;
 
 		// Rainbow Cycle
