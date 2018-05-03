@@ -101,10 +101,7 @@ void loop() {
 				brightnessVal = getBrightnessFromScale(serialReadVal);
 				FastLED.setBrightness(brightnessVal);
 			}
-			// TEST if delay will prevent interupt
-			delay(50);
 			FastLED.show();
-			delay(50);
 			Serial.write(0x40);
 			break;
 
