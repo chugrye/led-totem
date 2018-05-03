@@ -13,8 +13,6 @@
 #define NUMLINES      7
 CRGB leds[NUMLINES][NUMPIXELS];
 
-const byte header[4] = { 0xDE, 0xAD, 0xBE, 0xEF };
-
 void setup() {
 	FastLED.addLeds<NEOPIXEL, LEDPIN1>(leds[0], NUMPIXELS);
 	FastLED.addLeds<NEOPIXEL, LEDPIN2>(leds[1], NUMPIXELS);
@@ -31,13 +29,14 @@ void setup() {
 	FastLED.setBrightness(51);
 }
 
+// Error variables
 int errorCount = 0;
-byte byteReadCount = 0;
 bool animReadError = false;
+
+// Setting variables
 uint8_t brightnessVal = 20;
 
-byte pixelBuffer[3];
-int serialReadVal;
+// Global variables
 int command;
 
 void loop() {
@@ -49,60 +48,17 @@ void loop() {
 	{
 		// Show frame
 		case 0x00:
-			// Update LEDs
-			FastLED.show();
-
-			// Tell the controller we're ready
-			// We don't want to be receiving serial data during leds.show() because data will be dropped
-			Serial.write(0x00);
+			showFrameHandler();
 			break;
 
 		// Load frame
 		case 0x01:
-			while (Serial.available() == 0);
-			// Read and update pixels
-			for (int line = 0; line < NUMLINES; line++)
-			{
-				for (int pixel = 0; pixel < NUMPIXELS; pixel++)
-				{
-					byteReadCount = Serial.readBytes(pixelBuffer, 3);
-					if (byteReadCount < 3) {
-						errorCount++;
-						leds[line][pixel].r = 0;
-						leds[line][pixel].g = 0;
-						leds[line][pixel].b = 0;
-						animReadError = true;
-						break;
-					}
-					leds[line][pixel].r = pixelBuffer[0];
-					leds[line][pixel].g = pixelBuffer[1];
-					leds[line][pixel].b = pixelBuffer[2];
-				}
-			}
-			//if (animReadError) {
-			//	//TODO: we can remove this if we send a header set of bytes to look for
-			//	// but for now clear the serial buffer and then just let the user resend
-			//	while (Serial.available() > 0) {
-			//		Serial.read();
-			//	}
-			//	Serial.write(0xAA);
-			//	Serial.print("E:");
-			//	Serial.print(errorCount);
-			//}
+			loadFrameHandler();
 			break;
 
-		// Settings start at 0x40
-
-		// Brightness
+		// Settings
 		case 0x40:
-			while (Serial.available() == 0);
-			serialReadVal = Serial.read();
-			if (serialReadVal != -1) {
-				brightnessVal = getBrightnessFromScale(serialReadVal);
-				FastLED.setBrightness(brightnessVal);
-			}
-			FastLED.show();
-			Serial.write(0x40);
+			settingsHandler();
 			break;
 
 		// Rainbow Cycle
@@ -110,18 +66,87 @@ void loop() {
 			rainbowCycleAnimation();
 			break;
 
-		// Clear
+		// Start new animation
 		case 0x03:
-			animReadError = false;
-			FastLED.clear();
-			FastLED.show();
-			Serial.write(0x03);
+			newAnimationHandler();
 			break;
 	}
 }
 
+void showFrameHandler() {
+	// Update LEDs
+	FastLED.show();
+
+	// Tell the controller we're ready
+	// We don't want to be receiving serial data during leds.show() because data will be dropped
+	Serial.write(0x00);
+}
+
+void loadFrameHandler() {
+	byte byteReadCount = 0;
+	byte pixelBuffer[3];
+
+	while (Serial.available() == 0);
+	// Read and update pixels
+	for (int line = 0; line < NUMLINES; line++)
+	{
+		for (int pixel = 0; pixel < NUMPIXELS; pixel++)
+		{
+			byteReadCount = Serial.readBytes(pixelBuffer, 3);
+			if (byteReadCount < 3) {
+				errorCount++;
+				leds[line][pixel].r = 0;
+				leds[line][pixel].g = 0;
+				leds[line][pixel].b = 0;
+				animReadError = true;
+				break;
+			}
+			leds[line][pixel].r = pixelBuffer[0];
+			leds[line][pixel].g = pixelBuffer[1];
+			leds[line][pixel].b = pixelBuffer[2];
+		}
+	}
+}
+
+void settingsHandler() {
+	int settingCommand;
+	// Find out which setting is being accessed
+	while (Serial.available() == 0);
+	settingCommand = Serial.read();
+
+	switch (settingCommand) {
+		case 0x05:
+			brightnessSetting();
+			break;
+	}
+
+	// Broadcast Settings Finished
+	Serial.write(0x40);
+}
+
+void brightnessSetting() {
+	int readBrightness;
+	// Find out which setting is being accessed
+	while (Serial.available() == 0);
+	readBrightness = Serial.read();
+
+	if (readBrightness != -1) {
+		brightnessVal = getBrightnessFromScale(readBrightness);
+		FastLED.setBrightness(brightnessVal);
+	}
+
+	FastLED.show();
+}
+
 uint8_t getBrightnessFromScale(byte scaleVal) {
 	return scaleVal * (255 / 100);
+}
+
+void newAnimationHandler() {
+	animReadError = false;
+	FastLED.clear();
+	FastLED.show();
+	Serial.write(0x03);
 }
 
 void rainbowCycleAnimation() {

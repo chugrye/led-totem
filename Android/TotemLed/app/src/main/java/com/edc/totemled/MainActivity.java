@@ -309,13 +309,22 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
+     * Send command to for update setting
+     */
+    public void sendSettingUpdateCommand() {
+        destroyAnimation();
+        byte[] settingUpdateCommand = new byte[] { (byte)0x40 };
+        serialPort.write(settingUpdateCommand);
+    }
+
+    /**
      * Send command to clear LED strip and proceed with next animation
      */
     public void sendBrightness() {
-        destroyAnimation();
-        byte[] clearFrameCommand = new byte[] { (byte)0x40 };
+        sendSettingUpdateCommand();
+        byte[] brightnessCommand = new byte[] { (byte)0x05 };
         byte[] brightnessValue = new byte[] { (byte)brightness };;
-        serialPort.write(clearFrameCommand);
+        serialPort.write(brightnessCommand);
         serialPort.write(brightnessValue);
     }
 
