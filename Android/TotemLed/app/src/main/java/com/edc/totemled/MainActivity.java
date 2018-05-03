@@ -86,6 +86,11 @@ public class MainActivity extends AppCompatActivity {
                         e.printStackTrace();
                     }
                 }
+                // Preference update finished
+                if (arg0[0] == (byte)0x40) {
+                    killFrame = false;
+                    sendFrame(currentFrame);
+                }
                 // Cleared / start animation
                 if (arg0[0] == (byte)0x03) {
                     try {
@@ -149,7 +154,7 @@ public class MainActivity extends AppCompatActivity {
                     if (key.equals("pref_brightness")) {
                         int value =  Integer.parseInt(prefs.getString(key, "50"));
                         brightness = value;
-                        tvAppend(textView,"Brightness Update = " + brightness + "\n");
+                        //tvAppend(textView,"Brightness Update = " + brightness + "\n");
                         if (isSerialConnectionOpen()) {
                             sendBrightness();
                         }
@@ -307,6 +312,7 @@ public class MainActivity extends AppCompatActivity {
      * Send command to clear LED strip and proceed with next animation
      */
     public void sendBrightness() {
+        destroyAnimation();
         byte[] clearFrameCommand = new byte[] { (byte)0x40 };
         byte[] brightnessValue = new byte[] { (byte)brightness };;
         serialPort.write(clearFrameCommand);

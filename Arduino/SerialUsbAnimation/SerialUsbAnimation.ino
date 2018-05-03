@@ -95,11 +95,17 @@ void loop() {
 
 		// Brightness
 		case 0x40:
+			while (Serial.available() == 0);
 			serialReadVal = Serial.read();
 			if (serialReadVal != -1) {
 				brightnessVal = getBrightnessFromScale(serialReadVal);
 				FastLED.setBrightness(brightnessVal);
 			}
+			// TEST if delay will prevent interupt
+			delay(50);
+			FastLED.show();
+			delay(50);
+			Serial.write(0x40);
 			break;
 
 		// Rainbow Cycle
