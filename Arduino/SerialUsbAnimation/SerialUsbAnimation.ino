@@ -15,6 +15,10 @@ CRGB leds[NUMLINES][NUMPIXELS];
 
 #define ANIM_COMMAND 0xC0
 
+// Setting variables
+uint8_t brightnessVal = 20;
+byte colorPalette[10];
+
 void setup() {
 	FastLED.addLeds<NEOPIXEL, LEDPIN1>(leds[0], NUMPIXELS);
 	FastLED.addLeds<NEOPIXEL, LEDPIN2>(leds[1], NUMPIXELS);
@@ -28,15 +32,12 @@ void setup() {
 	Serial.begin(115200);
 
 	// Set initial brightness to 20%
-	FastLED.setBrightness(51);
+	FastLED.setBrightness(getBrightnessFromScale(brightnessVal));
 }
 
 // Error variables
 int errorCount = 0;
 bool animReadError = false;
-
-// Setting variables
-uint8_t brightnessVal = 20;
 
 // Global variables
 int command;

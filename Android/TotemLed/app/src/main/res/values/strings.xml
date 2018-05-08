@@ -28,5 +28,7 @@
 
     <!-- Color Palettes -->
     <string name="pref_header_color_palettes">Color Palettes</string>
+    <string name="header_arduino_animations">ARDUINO</string>
+    <string name="header_custom_animations">CUSTOM Animations</string>
 
 </resources>
