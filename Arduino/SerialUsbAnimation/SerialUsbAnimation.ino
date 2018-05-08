@@ -17,7 +17,6 @@ CRGB leds[NUMLINES][NUMPIXELS];
 
 // Setting variables
 uint8_t brightnessVal = 20;
-byte colorPalette[10];
 
 void setup() {
 	FastLED.addLeds<NEOPIXEL, LEDPIN1>(leds[0], NUMPIXELS);
@@ -44,7 +43,6 @@ int command;
 
 int lastCommand;
 int lastAnimationCommand;
-
 
 void loop() {
 	while (Serial.available() == 0);
@@ -79,6 +77,40 @@ void loop() {
 			break;
 	}
 	lastCommand = command;
+}
+
+// Greatest common denominator
+int gcd(int a, int b)
+{
+	// base case
+	if (a == b)
+		return a;
+
+	// a is greater
+	if (a > b)
+		return gcd(a - b, b);
+	return gcd(a, b - a);
+}
+
+// Function to return LCM of two numbers
+int lcm(int a, int b)
+{
+	return (a*b) / gcd(a, b);
+}
+
+uint32_t colorWheel(uint16_t pos) {
+	pos = 765 - pos;
+	if (pos < 255) {
+		return ((uint32_t)(255 - pos) << 16) | ((uint32_t)(0) << 8) | (pos);
+	}
+	else if (pos < 510) {
+		pos -= 255;
+		return ((uint32_t)(0) << 16) | ((uint32_t)(pos) << 8) | (255 - pos);
+	}
+	else {
+		pos -= 510;
+		return ((uint32_t)(pos) << 16) | ((uint32_t)(255 - pos) << 8) | (0);
+	}
 }
 
 void showFrameHandler() {
@@ -164,40 +196,12 @@ void newAnimationHandler() {
 	Serial.write(0x03);
 }
 
-void rainbowCycleAnimation() {
-	byte rainbowTrailFrameCount = 0;
-	byte red, green, blue;
-	while (Serial.available() == 0) {
-		for (byte line = 0; line < NUMLINES; line++) {
-			for (byte pixel = 0; pixel < NUMPIXELS; pixel++) {
-				byte factor = rainbowTrailFrameCount + pixel;
-				byte index = (factor / 15) % 3;
-				byte val = (factor % 15) * 17;
-				if (index == 0) {
-					red = val;
-					green = 255 - val;
-					blue = 0;
-				}
-				else if (index == 1) {
-					red = 255 - val;
-					green = 0;
-					blue = val;
-				}
-				else if (index == 2) {
-					red = 0;
-					green = val;
-					blue = 255 - val;
-				}
-				leds[line][pixel].r = red;
-				leds[line][pixel].g = green;
-				leds[line][pixel].b = blue;
-			}
-		}
-		FastLED.show();
-		rainbowTrailFrameCount++;
-		rainbowTrailFrameCount = rainbowTrailFrameCount % 45;
-		delay(50);
-	}
+void setPixel(int line, int Pixel, CRGB color) {
+	leds[line][Pixel] = color;
+}
+
+void setPixel(int line, int Pixel, uint32_t color) {
+	leds[line][Pixel] = color;
 }
 
 void setPixel(int line, int Pixel, byte red, byte green, byte blue) {
@@ -235,21 +239,38 @@ void storedAnimationHandler(bool useLastAnimation) {
 	lastAnimationCommand = anim;
 }
 
-void setMeteorPixels(byte line, int i, int j, byte red, byte green, byte blue) {
-	if ((i - j < NUMPIXELS) && (i - j >= 0)) {
-		//setPixel(line, i - j, red, green, blue);
-		setPixel(line, i - j, red, green, blue);
+void rainbowCycleAnimation() {
+	int rainbowTrailFrameCount = 0;
+	byte numIntervals = 45;
+
+	int maxCycleIndex = lcm(numIntervals, NUMPIXELS);
+	byte red, green, blue;
+	byte counter = 0;
+	while (Serial.available() == 0) {
+		for (byte line = 0; line < NUMLINES; line++) {
+			for (byte pixel = 0; pixel < NUMPIXELS; pixel++) {
+				byte factor = (rainbowTrailFrameCount + pixel) % numIntervals;
+				uint16_t colorIndex = factor * (765 / numIntervals);
+				leds[line][pixel] = colorWheel(colorIndex);
+			}
+		}
+		FastLED.show();
+		rainbowTrailFrameCount++;
+		rainbowTrailFrameCount = rainbowTrailFrameCount % maxCycleIndex;
+		delay(50);
 	}
 }
 
-byte getRandomByte(byte seed, byte max) {
-	return seed * (seed + 2) % max;
+void setMeteorPixels(byte line, int i, int j, uint16_t colorIndex) {
+	if ((i - j < NUMPIXELS) && (i - j >= 0)) {
+		setPixel(line, i - j, colorWheel(colorIndex));
+	}
 }
 
 void meteorRainAnimation() {
-	byte red = 0xff;
-	byte green = 0xff;
-	byte blue = 0xff;
+	byte red;
+	byte green;
+	byte blue;
 	byte meteorSize = 7;
 	byte meteorTrailDecay = 64;
 	byte meteorRandomDecay = true;
@@ -276,7 +297,6 @@ void meteorRainAnimation() {
 		c2 = ((i - maxI/4) % maxI + maxI) % maxI;
 		c3 = ((i - maxI*2/4) % maxI + maxI) % maxI;
 
-		byte randomSeed = line1 + line2 + line3;
 		if (c1 == 0) {
 			setAll(line1, 0, 0, 0);
 			line1 = random(0, NUMLINES - 1);
@@ -292,13 +312,10 @@ void meteorRainAnimation() {
 		
 		// draw meteor
 		for (int j = 0; j < meteorSize; j++) {
-			setMeteorPixels(line1, c1, j, red, green, blue);
-			//if ((i - j < NUMPIXELS) && (i - j >= 0)) {
-			//	//setPixel(line, i - j, red, green, blue);
-			//	setPixel(line1, i - j, red, green, blue);
-			//}
-			setMeteorPixels(line2, c2, j, red, green, blue);
-			setMeteorPixels(line3, c3, j, red, green, blue);
+			uint16_t colorIndex = (i * 3) % 765;
+			setMeteorPixels(line1, c1, j, colorIndex);
+			setMeteorPixels(line2, c2, j, colorIndex);
+			setMeteorPixels(line3, c3, j, colorIndex);
 		}
 
 		// fade brightness all LEDs one step
