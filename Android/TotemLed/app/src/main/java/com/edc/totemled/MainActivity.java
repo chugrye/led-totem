@@ -43,7 +43,7 @@ public class MainActivity extends AppCompatActivity {
     public int brightness;
     public int framesPerSecond;
     Button startButton, sendButton, clearButton, stopButton;
-    Button rgbTrailButton, rainbowTrailButton, rainbowCycleButton, treeButton;
+    Button rgbTrailButton, rainbowTrailButton, rainbowCycleButton, treeButton, meteorRainButton;
     TextView textView;
     EditText editText;
     UsbManager usbManager;
@@ -152,13 +152,13 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void onSharedPreferenceChanged(SharedPreferences prefs, String key) {
                     if (key.equals("pref_brightness")) {
-                        int value =  Integer.parseInt(prefs.getString(key, "50"));
+                        int value =  Integer.parseInt(prefs.getString(key, "20"));
                         brightness = value;
                         //tvAppend(textView,"Brightness Update = " + brightness + "\n");
                         if (isSerialConnectionOpen()) {
                             sendBrightness();
                         }
-                    } else if (key.equals("example_list")) {
+                    } else if (key.equals("pref_fps")) {
                         int value = Integer.parseInt(prefs.getString(key, "15"));
                         framesPerSecond = value;
                     }
@@ -175,12 +175,6 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-//            case R.id.item_animations:
-//                Toast.makeText(this, "Animations", Toast.LENGTH_SHORT).show();
-//                return true;
-//            case R.id.item_features:
-//                Toast.makeText(this, "Features", Toast.LENGTH_SHORT).show();
-//                return true;
             case R.id.item_settings:
                 Toast.makeText(this, "Settings", Toast.LENGTH_SHORT).show();
                 Intent intent = new Intent(this, SettingsActivity.class);
@@ -199,7 +193,7 @@ public class MainActivity extends AppCompatActivity {
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
         prefs.registerOnSharedPreferenceChangeListener(listener);
 
-        brightness = Integer.parseInt(prefs.getString("pref_brightness", "50"));
+        brightness = Integer.parseInt(prefs.getString("pref_brightness", "20"));
         framesPerSecond = Integer.parseInt(prefs.getString("example_list", "15"));
 
         // Clears preferences on app load
@@ -215,6 +209,7 @@ public class MainActivity extends AppCompatActivity {
         rainbowTrailButton = (Button) findViewById(R.id.rainbowTrailButton);
         rainbowCycleButton = (Button) findViewById(R.id.rainbowCycleButton);
         treeButton = (Button) findViewById(R.id.treeButton);
+        meteorRainButton = (Button) findViewById(R.id.meteorRainButton);
         editText = (EditText) findViewById(R.id.editText);
         textView = (TextView) findViewById(R.id.textView);
         textView.setMovementMethod(new ScrollingMovementMethod());
@@ -237,15 +232,16 @@ public class MainActivity extends AppCompatActivity {
         return serialPort != null && serialConnectionOpen;
     }
 
-    public void setUiEnabled(boolean bool) {
-        startButton.setEnabled(!bool);
-        sendButton.setEnabled(bool);
-        stopButton.setEnabled(bool);
-        rgbTrailButton.setEnabled(bool);
-        rainbowTrailButton.setEnabled(bool);
-        rainbowCycleButton.setEnabled(bool);
-        treeButton.setEnabled(bool);
-        textView.setEnabled(bool);
+    public void setUiEnabled(boolean enableFlag) {
+        startButton.setEnabled(!enableFlag);
+        sendButton.setEnabled(enableFlag);
+        stopButton.setEnabled(enableFlag);
+        rgbTrailButton.setEnabled(enableFlag);
+        rainbowTrailButton.setEnabled(enableFlag);
+        rainbowCycleButton.setEnabled(enableFlag);
+        treeButton.setEnabled(enableFlag);
+        meteorRainButton.setEnabled(enableFlag);
+        textView.setEnabled(enableFlag);
     }
 
     public int getAnimationDelay() {
@@ -492,11 +488,23 @@ public class MainActivity extends AppCompatActivity {
         sendClear();
     }
 
+    public void storedAnimationCommand() {
+        destroyAnimation();
+        byte[] storedAnimationCommand = new byte[] { (byte)0xC0 };
+        serialPort.write(storedAnimationCommand);
+    }
+
     // Rainbow Cycle Program - Equally distributed
     public void onClickRainbowCycle(View view) {
-        destroyAnimation();
-        byte[] rainbowCycleCommand = new byte[] { (byte)254 };
-        serialPort.write(rainbowCycleCommand);
+        storedAnimationCommand();
+        byte[] animCommand = new byte[] { (byte)0x02 };
+        serialPort.write(animCommand);
+    }
+
+    public void onClickMeteorRain(View view) {
+        storedAnimationCommand();
+        byte[] animCommand = new byte[] { (byte)0x03 };
+        serialPort.write(animCommand);
     }
 
     public void onClickTree(View view) {

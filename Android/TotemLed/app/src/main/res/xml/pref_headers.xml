@@ -8,9 +8,9 @@
         android:title="@string/pref_header_general" />
 
     <header
-        android:fragment="com.edc.totemled.SettingsActivity$NotificationPreferenceFragment"
+        android:fragment="com.edc.totemled.SettingsActivity$ColorPalettesPreferenceFragment"
         android:icon="@drawable/ic_notifications_black_24dp"
-        android:title="@string/pref_header_notifications" />
+        android:title="@string/pref_header_color_palettes" />
 
     <header
         android:fragment="com.edc.totemled.SettingsActivity$DataSyncPreferenceFragment"
