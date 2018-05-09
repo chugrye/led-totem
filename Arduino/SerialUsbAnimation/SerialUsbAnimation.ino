@@ -230,7 +230,7 @@ void storedAnimationHandler(bool useLastAnimation) {
 
 	switch (anim) {
 		case 0x02:
-			rainbowCycleAnimation();
+			fireworkAnimation();
 			break;
 		case 0x03:
 			meteorRainAnimation();
@@ -258,6 +258,51 @@ void rainbowCycleAnimation() {
 		rainbowTrailFrameCount++;
 		rainbowTrailFrameCount = rainbowTrailFrameCount % maxCycleIndex;
 		delay(50);
+	}
+}
+
+int distanceFromCenter(int line, int pixel, int i, int j) {
+	return abs(i - line) + abs(j - pixel);
+}
+
+void fireworkAnimation() {
+	while (Serial.available() == 0) {
+		uint16_t colorIndex = random(0, 765);
+		int fireworkRadius = random(4, 6);
+		int startingLine = random(2, NUMLINES - 3);
+		int startingPixel = random(fireworkRadius, NUMPIXELS - fireworkRadius - 1);
+		int pixel;
+		int line;
+		uint16_t colorSpread = random(70, 120);
+		for (int i = 0; i < (fireworkRadius*2); i++) {
+			line = (startingLine - fireworkRadius + i);
+			for (int j = 0; j < (fireworkRadius*2); j++) {
+				pixel = (startingPixel - fireworkRadius + j);
+				if (line >= 0 && line < NUMLINES && pixel >= 0 && pixel < NUMPIXELS) {
+					int colorFactor = distanceFromCenter(startingLine, startingPixel, line, pixel);
+					if (colorFactor <= fireworkRadius) {
+						int colorFade = colorFactor * (255 / fireworkRadius);
+						CRGB startColor = colorWheel((colorIndex + colorFactor * colorSpread) % 765);
+						CRGB nextColor = CRGB(max(startColor.r - colorFade, 0), max(startColor.g - colorFade, 0), max(startColor.b - colorFade, 0));
+						setPixel(line, pixel, nextColor);
+					}
+				}
+			}
+		}
+		FastLED.show();
+		delay(50);
+		byte delayFactor = random(15, 40);
+		for (byte i = 0; i < delayFactor; i++) {
+			for (byte j = 0; j < NUMLINES; j++) {
+				for (byte k = 0; k < NUMPIXELS; k++) {
+					if ((random(10) > 5)) {
+						leds[j][k].fadeToBlackBy(64);
+					}
+				}
+			}
+			FastLED.show();
+			delay(50);
+		}
 	}
 }
 
