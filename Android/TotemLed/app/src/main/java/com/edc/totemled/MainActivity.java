@@ -47,7 +47,7 @@ public class MainActivity extends AppCompatActivity {
     public int brightness;
     public int framesPerSecond;
     Button startButton, sendButton, clearButton, stopButton;
-    Button rgbTrailButton, rainbowTrailButton, rainbowCycleButton, treeButton, meteorRainButton;
+    Button rgbTrailButton, rainbowTrailButton, rainbowCycleButton, treeButton, meteorRainButton, fireworksButton;
     TextView textView;
     EditText editText;
     UsbManager usbManager;
@@ -214,6 +214,7 @@ public class MainActivity extends AppCompatActivity {
         rainbowCycleButton = (Button) findViewById(R.id.rainbowCycleButton);
         treeButton = (Button) findViewById(R.id.treeButton);
         meteorRainButton = (Button) findViewById(R.id.meteorRainButton);
+        fireworksButton = (Button) findViewById(R.id.fireworksButton);
         editText = (EditText) findViewById(R.id.editText);
         textView = (TextView) findViewById(R.id.textView);
         textView.setMovementMethod(new ScrollingMovementMethod());
@@ -245,6 +246,7 @@ public class MainActivity extends AppCompatActivity {
         rainbowCycleButton.setEnabled(enableFlag);
         treeButton.setEnabled(enableFlag);
         meteorRainButton.setEnabled(enableFlag);
+        fireworksButton.setEnabled(enableFlag);
         textView.setEnabled(enableFlag);
     }
 
