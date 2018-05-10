@@ -507,6 +507,12 @@ public class MainActivity extends AppCompatActivity {
         serialPort.write(animCommand);
     }
 
+    public void onClickFireworks(View view) {
+        storedAnimationCommand();
+        byte[] animCommand = new byte[] { (byte)0x04 };
+        serialPort.write(animCommand);
+    }
+
     public void onClickTree(View view) {
         try {
             playAnimationFromFile(getAssets().open("tree2.bin"));

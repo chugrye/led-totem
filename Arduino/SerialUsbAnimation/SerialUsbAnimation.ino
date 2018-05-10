@@ -230,10 +230,13 @@ void storedAnimationHandler(bool useLastAnimation) {
 
 	switch (anim) {
 		case 0x02:
-			fireworkAnimation();
+			rainbowCycleAnimation();
 			break;
 		case 0x03:
 			meteorRainAnimation();
+			break;
+		case 0x04:
+			fireworkAnimation();
 			break;
 	}
 	lastAnimationCommand = anim;
