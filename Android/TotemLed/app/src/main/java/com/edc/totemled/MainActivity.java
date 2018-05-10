@@ -29,9 +29,13 @@ import com.google.common.io.ByteStreams;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.SequenceInputStream;
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Vector;
 
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 
@@ -569,5 +573,104 @@ public class MainActivity extends AppCompatActivity {
 
         // send clear and start animation
         sendClear();
+    }
+
+    private void showStaticMessage(String message, Color messageColor, Color backgroundColor) throws IOException {
+        int letterHeight = 5;
+        String[] words = message.split(" ");
+        List<List<Byte>> wordByteList = new ArrayList();
+        for( String word : words){
+            wordByteList.add(convertMessageByteList(word, messageColor, backgroundColor));
+        }
+        List<List<Byte>> frameList = new ArrayList();
+        //center and fill out rest of frame
+        for( int wordPosition = 0; wordPosition < words.length ; wordPosition++){
+            int numLetters = words[wordPosition].length();
+            int wordHeight = numLetters * letterHeight + numLetters - 1; //each latter plus spacer pixels
+            int topFill = 0;
+            int bottomFill = 0;
+            if(numLetters * letterHeight < NUMPIXELS){
+                if( (NUMPIXELS - wordHeight)%2 == 0 ){
+                    topFill = (NUMPIXELS - wordHeight)/2;
+                    bottomFill = (NUMPIXELS - wordHeight)/2;
+                }else{
+                    topFill = (NUMPIXELS - wordHeight)/2;
+                    bottomFill = ((NUMPIXELS - wordHeight)/2) + 1;
+                }
+            }
+
+            //create the rest of the frame;
+            List<Byte> wordFrame = new ArrayList();
+            fillBackground(wordFrame, topFill, backgroundColor);
+            for(Byte pixelColor : wordByteList.get(wordPosition)){
+                wordFrame.add(pixelColor);
+            }
+            fillBackground(wordFrame, bottomFill, backgroundColor);
+            frameList.add(wordFrame);
+            animationSetup(frameList.size());
+            // TODO finish out animation
+            //animation =
+        }
+    }
+
+    private List<Byte> convertMessageByteList(String message, Color letterColor, Color backgroundColor) throws IOException {
+        InputStream[] streams = new InputStream[message.length()];
+        for( int letter = 0; letter < message.length(); letter++){
+            String binName = message.charAt(letter) + ".bin";
+            streams[letter] = getAssets().open(binName);
+        }
+        Vector<InputStream> vectorStreams = new Vector<>();
+        for( InputStream stream : streams){
+            vectorStreams.add(stream);
+            stream.close();
+        }
+        return convertMessageColor(
+                new SequenceInputStream(vectorStreams.elements()),
+                letterColor,
+                backgroundColor);
+    }
+
+    private void fillBackground(List<Byte> wordFrame, int rowNumber, Color background){
+        for(int i = 0; i < rowNumber; i++){
+            for(int j = 0; j < NUMLINES; j++){
+                wordFrame.add(background.getRed());
+                wordFrame.add(background.getGreen());
+                wordFrame.add(background.getBlue());
+            }
+        }
+    }
+
+    private List<Byte> convertMessageColor(InputStream original, Color letter, Color background) throws IOException {
+        byte[] originalBytes = ByteStreams.toByteArray(original);
+        List<Byte> newBytes = new ArrayList();
+        int count = 0;
+        byte red = 0;
+        byte green= 0;
+        byte blue= 0;
+        for(byte pixelColor : originalBytes){
+            if(count == 0){
+                red = pixelColor;
+            } else if(count == 1){
+                green = pixelColor;
+            } else if(count == 2){
+                blue = pixelColor;
+            } else{
+                Color readColor = new Color(red, green, blue);
+                if(readColor.isOff()){
+                    newBytes.add(background.getRed());
+                    newBytes.add(background.getGreen());
+                    newBytes.add(background.getBlue());
+                    red = 0;
+                    green = 0;
+                    blue = 0;
+                }else {
+                    newBytes.add(letter.getRed());
+                    newBytes.add(letter.getGreen());
+                    newBytes.add(letter.getBlue());
+                }
+                count = 0;
+            }
+        }
+        return newBytes;
     }
 }
