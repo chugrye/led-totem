@@ -521,6 +521,37 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    public void onClickColoradoWhiteFlag(View view) {
+        try {
+
+            Log.i("GOT HERE", "GOT to 1");
+            playAnimationFromFile(getAssets().open("coloradoFlagWhite.bin"));
+        }catch(IOException e)
+        {
+            Log.e("uh oh", e.getMessage());
+        }
+    }
+
+    public void onClickColoradoGreyFlag(View view) {
+        try {
+            Log.i("GOT HERE", "GOT to 2");
+            playAnimationFromFile(getAssets().open("coloradoFlagGrey.bin"));
+        }catch(IOException e)
+        {
+            Log.e("uh oh", e.getMessage());
+        }
+    }
+
+
+    public void onClickWord(View view) {
+        Log.i("Got here", "got here");
+        try {
+            showStaticMessage("I LOVE TITTY  ", new Color((byte)200,(byte)155,(byte)0), new Color((byte)20,(byte)0,(byte)100));
+        } catch (IOException e) {
+            Log.e("uh oh", e.getMessage());
+        }
+    }
+
     // Input a value 0 to 255 to get a color value.
     // The colours are a transition r - g - b - back to r.
     byte[] Wheel(byte WheelPos) {
@@ -559,6 +590,7 @@ public class MainActivity extends AppCompatActivity {
         // #1: get byte array from binary file
         // #2: calculate number of frames the file had for that animation
         // #3: initialize the animation variables
+        Log.i("GOT HERE", "GOT HERE");
         byte[] fileAnimation = ByteStreams.toByteArray(fileInputStream);
         // Using Math.ceil( ) here in case this is a fraction for some reason to account for last frame
         int frameCount = (int)Math.ceil((double) fileAnimation.length / bytesInFrame);
@@ -572,11 +604,14 @@ public class MainActivity extends AppCompatActivity {
 
     private void showStaticMessage(String message, Color messageColor, Color backgroundColor) throws IOException {
         String[] words = message.split(" ");
-        List<List<Byte>> wordByteList = new ArrayList();
         animationSetup(words.length);
         for( int wordPosition = 0; wordPosition < words.length; wordPosition++ ){
             convertWordToStaticAnimation(words[wordPosition], messageColor, backgroundColor, wordPosition);
         }
+
+        framesPerSecond = 2;
+
+        sendClear();
     }
 
     private void convertWordToStaticAnimation(String word, Color letterColor, Color backgroundColor, int wordNumber) throws IOException {
@@ -590,18 +625,10 @@ public class MainActivity extends AppCompatActivity {
         int numLetters = word.length();
         int wordHeight = numLetters * LETTERHEIGHT + numLetters - 1; //each latter plus spacer pixels
         int topFill = 0;
-        int bottomFill = 0;
         if(numLetters * LETTERHEIGHT < NUMPIXELS){
-            if( (NUMPIXELS - wordHeight)%2 == 0 ){
                 topFill = (NUMPIXELS - wordHeight)/2;
-                bottomFill = (NUMPIXELS - wordHeight)/2;
-            }else{
-                topFill = (NUMPIXELS - wordHeight)/2;
-                bottomFill = ((NUMPIXELS - wordHeight)/2) + 1;
-            }
         }
-        //fill top spacing
-        staticMessageFill(backgroundColor,0, topFill, wordNumber);
+        staticMessageFill(backgroundColor,0, NUMPIXELS, wordNumber);
 
         int pixelCount = 0;
         int lineCount = 0;
@@ -611,24 +638,18 @@ public class MainActivity extends AppCompatActivity {
             for (byte pixelColor : letterList.get(letter)) {
                 color[pixelColorCount] = pixelColor;
                 if (pixelColorCount == 2) {
-                    int pixelIndex = getAnimationIndex(wordNumber,lineCount,pixelCount + letter*LETTERHEIGHT + topFill,0);
+                    int pixelIndex = getAnimationIndex(wordNumber,lineCount,pixelCount + letter + letter*LETTERHEIGHT + topFill,0);
                     color = assignColor(color, letterColor, backgroundColor);
+                    Log.i("index",Integer.toString(pixelIndex));
                     setAnimationPixel(pixelIndex, color);
                     pixelCount = (pixelCount+1) % LETTERHEIGHT;
                     if(pixelCount == 0 ){
-                        lineCount++;
+                        lineCount = (lineCount + 1) % NUMLINES;
                     }
                 }
                 pixelColorCount = (pixelColorCount + 1) % 3;
             }
-            //second to last letter has pixel spacing
-            if(letter < letterList.size() - 1){
-                staticMessageFill(backgroundColor, topFill + letter + letter*LETTERHEIGHT,1,wordNumber);
-            }
         }
-
-        //fill bottom spacing
-        staticMessageFill(backgroundColor,NUMPIXELS - bottomFill -1 , bottomFill, wordNumber);
     }
 
     private void staticMessageFill(Color background, int startingRow, int numRowsToFill, int frame){
@@ -641,45 +662,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private byte[] assignColor(byte[] inputColor, Color letterColor, Color backgroundColor){
-        byte[] black = {00,00,00};
+        byte[] black = {(byte)0, (byte)0,(byte)0};
         byte[] white = {(byte)0xFF,(byte)0xFF,(byte)0xFF};
-        if(inputColor == black || inputColor == white){
+        if(inputColor[0] == black[0] && inputColor[1] == black[1] && inputColor[2] == black[2]
+                || inputColor[0] == white[0] && inputColor[1] == white[1] && inputColor[2] == white[2]){
             return backgroundColor.toByteArray();
         }else{
             return letterColor.toByteArray();
         }
-    }
-
-    private List<Byte> convertMessageColor(byte[] original, Color letter, Color background) throws IOException {
-        List<Byte> newBytes = new ArrayList();
-        int count = 0;
-        byte red = 0;
-        byte green= 0;
-        byte blue= 0;
-        for(byte pixelColor : original){
-            if(count == 0){
-                red = pixelColor;
-            } else if(count == 1){
-                green = pixelColor;
-            } else if(count == 2){
-                blue = pixelColor;
-            } else{
-                Color readColor = new Color(red, green, blue);
-                if(readColor.isOff()){
-                    newBytes.add(background.getRed());
-                    newBytes.add(background.getGreen());
-                    newBytes.add(background.getBlue());
-                    red = 0;
-                    green = 0;
-                    blue = 0;
-                }else {
-                    newBytes.add(letter.getRed());
-                    newBytes.add(letter.getGreen());
-                    newBytes.add(letter.getBlue());
-                }
-                count = 0;
-            }
-        }
-        return newBytes;
     }
 }
