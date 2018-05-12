@@ -230,10 +230,13 @@ void storedAnimationHandler(bool useLastAnimation) {
 
 	switch (anim) {
 		case 0x02:
-			fireworkAnimation();
+			rainbowCycleAnimation();
 			break;
 		case 0x03:
 			meteorRainAnimation();
+			break;
+		case 0x04:
+			fireworkAnimation();
 			break;
 	}
 	lastAnimationCommand = anim;
@@ -265,44 +268,75 @@ int distanceFromCenter(int line, int pixel, int i, int j) {
 	return abs(i - line) + abs(j - pixel);
 }
 
-void fireworkAnimation() {
-	while (Serial.available() == 0) {
-		uint16_t colorIndex = random(0, 765);
-		int fireworkRadius = random(4, 6);
-		int startingLine = random(2, NUMLINES - 3);
-		int startingPixel = random(fireworkRadius, NUMPIXELS - fireworkRadius - 1);
-		int pixel;
-		int line;
-		uint16_t colorSpread = random(70, 120);
-		for (int i = 0; i < (fireworkRadius*2); i++) {
-			line = (startingLine - fireworkRadius + i);
-			for (int j = 0; j < (fireworkRadius*2); j++) {
-				pixel = (startingPixel - fireworkRadius + j);
-				if (line >= 0 && line < NUMLINES && pixel >= 0 && pixel < NUMPIXELS) {
-					int colorFactor = distanceFromCenter(startingLine, startingPixel, line, pixel);
-					if (colorFactor <= fireworkRadius) {
-						int colorFade = colorFactor * (255 / fireworkRadius);
-						CRGB startColor = colorWheel((colorIndex + colorFactor * colorSpread) % 765);
-						CRGB nextColor = CRGB(max(startColor.r - colorFade, 0), max(startColor.g - colorFade, 0), max(startColor.b - colorFade, 0));
-						setPixel(line, pixel, nextColor);
-					}
+void matrixFadeToBlack(uint8_t decayRate, byte numFadeLoops, unsigned long delayLength) {
+	for (byte i = 0; i < numFadeLoops; i++) {
+		for (byte j = 0; j < NUMLINES; j++) {
+			for (byte k = 0; k < NUMPIXELS; k++) {
+				if ((random(10) > 5)) {
+					leds[j][k].fadeToBlackBy(decayRate);
 				}
 			}
 		}
 		FastLED.show();
-		delay(50);
-		byte delayFactor = random(15, 40);
-		for (byte i = 0; i < delayFactor; i++) {
-			for (byte j = 0; j < NUMLINES; j++) {
-				for (byte k = 0; k < NUMPIXELS; k++) {
-					if ((random(10) > 5)) {
-						leds[j][k].fadeToBlackBy(64);
-					}
+		delay(delayLength);
+	}
+}
+
+byte fireFirework(byte pixelTop) {
+	byte fireworkRadius = random(3, 5);
+	byte minPixelIndex = fireworkRadius + pixelTop;
+	// Get closer to top for first firework
+	if (pixelTop == 0) {
+		minPixelIndex -= 2;
+	}
+	// Using min( ) to make sure firework doesn't draw way too low
+	byte maxPixelIndex = min(NUMPIXELS + 2 - fireworkRadius, minPixelIndex + 12);
+	// Can't get to lowest possible index
+	if (minPixelIndex > maxPixelIndex) {
+		// Return max pixel value
+		return NUMPIXELS;
+	}
+
+	uint16_t colorIndex = random(0, 765);
+	byte colorSpread = random(70, 120);
+	byte pixel;
+	byte line;
+	byte startingLine = random(1, NUMLINES - 1);
+	byte startingPixel = random(minPixelIndex, maxPixelIndex);
+	byte fireworkDiameter = fireworkRadius * 2 + 1; // 2r + center
+
+	for (byte i = 0; i < fireworkDiameter; i++) {
+		line = (startingLine - fireworkRadius + i);
+		for (byte j = 0; j < fireworkDiameter; j++) {
+			pixel = (startingPixel - fireworkRadius + j);
+			// Only draw when within matrix
+			if (line >= 0 && line < NUMLINES && pixel >= 0 && pixel < NUMPIXELS) {
+				byte distanceFactor = distanceFromCenter(startingLine, startingPixel, line, pixel);
+				if (distanceFactor <= fireworkRadius) {
+					byte colorFade = distanceFactor * (255 / (fireworkRadius + 1));
+					CRGB startColor = colorWheel((colorIndex + distanceFactor * colorSpread) % 765);
+					CRGB nextColor = CRGB(max(startColor.r - colorFade, 0), max(startColor.g - colorFade, 0), max(startColor.b - colorFade, 0));
+					setPixel(line, pixel, nextColor);
 				}
 			}
-			FastLED.show();
-			delay(50);
 		}
+	}
+	FastLED.show();
+
+	// Returning last firework pixelIndex used
+	return startingPixel + fireworkRadius;
+}
+
+void fireworkAnimation() {
+	while (Serial.available() == 0) {
+		byte fireworkCount = random(1, 4);
+		byte lastPixelIndex = 0;
+		for (int i = 0; i < fireworkCount; i++) {
+			lastPixelIndex = fireFirework(lastPixelIndex) + 2;
+			delay(random(0, 300));
+		}
+		byte numFadeLoops = random(18, 40);
+		matrixFadeToBlack(64, numFadeLoops, 50);
 	}
 }
 
