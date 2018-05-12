@@ -514,7 +514,7 @@ public class MainActivity extends AppCompatActivity {
 
     public void onClickTree(View view) {
         try {
-            playAnimationFromFile(getAssets().open("tree2.bin"));
+            playAnimationFromFile(getAssets().open("tree.bin"));
         }catch(IOException e)
         {
             Log.e("uh oh", e.getMessage());
