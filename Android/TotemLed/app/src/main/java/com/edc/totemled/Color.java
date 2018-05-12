@@ -43,4 +43,13 @@ public class Color {
             return false;
         }
     }
+
+    public byte[] toByteArray(){
+        byte[] colorByte = new byte[3];
+        colorByte[0] = red;
+        colorByte[1] = green;
+        colorByte[2] = blue;
+        return colorByte;
+
+    }
 }

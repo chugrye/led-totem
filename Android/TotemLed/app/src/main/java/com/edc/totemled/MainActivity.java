@@ -29,21 +29,22 @@ import com.google.common.io.ByteStreams;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.SequenceInputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Vector;
 
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
+
+import org.apache.commons.io.IOUtils;
 
 public class MainActivity extends AppCompatActivity {
     public final String ACTION_USB_PERMISSION = "com.edc.totemled.USB_PERMISSION";
     public final int NUMLINES = 7;
     public final int NUMPIXELS = 30;
     public final int NUMCOLORS = 3;
+    public final int LETTERHEIGHT = 5;
     public int brightness;
     public int framesPerSecond;
     Button startButton, sendButton, clearButton, stopButton;
@@ -570,78 +571,92 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void showStaticMessage(String message, Color messageColor, Color backgroundColor) throws IOException {
-        int letterHeight = 5;
         String[] words = message.split(" ");
         List<List<Byte>> wordByteList = new ArrayList();
-        for( String word : words){
-            wordByteList.add(convertMessageByteList(word, messageColor, backgroundColor));
-        }
-        List<List<Byte>> frameList = new ArrayList();
-        //center and fill out rest of frame
-        for( int wordPosition = 0; wordPosition < words.length ; wordPosition++){
-            int numLetters = words[wordPosition].length();
-            int wordHeight = numLetters * letterHeight + numLetters - 1; //each latter plus spacer pixels
-            int topFill = 0;
-            int bottomFill = 0;
-            if(numLetters * letterHeight < NUMPIXELS){
-                if( (NUMPIXELS - wordHeight)%2 == 0 ){
-                    topFill = (NUMPIXELS - wordHeight)/2;
-                    bottomFill = (NUMPIXELS - wordHeight)/2;
-                }else{
-                    topFill = (NUMPIXELS - wordHeight)/2;
-                    bottomFill = ((NUMPIXELS - wordHeight)/2) + 1;
-                }
-            }
-
-            //create the rest of the frame;
-            List<Byte> wordFrame = new ArrayList();
-            fillBackground(wordFrame, topFill, backgroundColor);
-            for(Byte pixelColor : wordByteList.get(wordPosition)){
-                wordFrame.add(pixelColor);
-            }
-            fillBackground(wordFrame, bottomFill, backgroundColor);
-            frameList.add(wordFrame);
-            animationSetup(frameList.size());
-            // TODO finish out animation
-            //animation =
+        animationSetup(words.length);
+        for( int wordPosition = 0; wordPosition < words.length; wordPosition++ ){
+            convertWordToStaticAnimation(words[wordPosition], messageColor, backgroundColor, wordPosition);
         }
     }
 
-    private List<Byte> convertMessageByteList(String message, Color letterColor, Color backgroundColor) throws IOException {
-        InputStream[] streams = new InputStream[message.length()];
-        for( int letter = 0; letter < message.length(); letter++){
-            String binName = message.charAt(letter) + ".bin";
-            streams[letter] = getAssets().open(binName);
-        }
-        Vector<InputStream> vectorStreams = new Vector<>();
-        for( InputStream stream : streams){
-            vectorStreams.add(stream);
+    private void convertWordToStaticAnimation(String word, Color letterColor, Color backgroundColor, int wordNumber) throws IOException {
+        List<byte[]> letterList = new ArrayList();
+        for( int letter = 0; letter < word.length(); letter++ ){
+            String binName = word.charAt(letter) + ".bin";
+            InputStream stream = getAssets().open(binName);
+            letterList.add(IOUtils.toByteArray(stream));
             stream.close();
         }
-        return convertMessageColor(
-                new SequenceInputStream(vectorStreams.elements()),
-                letterColor,
-                backgroundColor);
+        int numLetters = word.length();
+        int wordHeight = numLetters * LETTERHEIGHT + numLetters - 1; //each latter plus spacer pixels
+        int topFill = 0;
+        int bottomFill = 0;
+        if(numLetters * LETTERHEIGHT < NUMPIXELS){
+            if( (NUMPIXELS - wordHeight)%2 == 0 ){
+                topFill = (NUMPIXELS - wordHeight)/2;
+                bottomFill = (NUMPIXELS - wordHeight)/2;
+            }else{
+                topFill = (NUMPIXELS - wordHeight)/2;
+                bottomFill = ((NUMPIXELS - wordHeight)/2) + 1;
+            }
+        }
+        //fill top spacing
+        staticMessageFill(backgroundColor,0, topFill, wordNumber);
+
+        int pixelCount = 0;
+        int lineCount = 0;
+        for( int letter = 0; letter < letterList.size(); letter++) {
+            int pixelColorCount = 0;
+            byte[] color = new byte[3];
+            for (byte pixelColor : letterList.get(letter)) {
+                color[pixelColorCount] = pixelColor;
+                if (pixelColorCount == 2) {
+                    int pixelIndex = getAnimationIndex(wordNumber,lineCount,pixelCount + letter*LETTERHEIGHT + topFill,0);
+                    color = assignColor(color, letterColor, backgroundColor);
+                    setAnimationPixel(pixelIndex, color);
+                    pixelCount = (pixelCount+1) % LETTERHEIGHT;
+                    if(pixelCount == 0 ){
+                        lineCount++;
+                    }
+                }
+                pixelColorCount = (pixelColorCount + 1) % 3;
+            }
+            //second to last letter has pixel spacing
+            if(letter < letterList.size() - 1){
+                staticMessageFill(backgroundColor, topFill + letter + letter*LETTERHEIGHT,1,wordNumber);
+            }
+        }
+
+        //fill bottom spacing
+        staticMessageFill(backgroundColor,NUMPIXELS - bottomFill -1 , bottomFill, wordNumber);
     }
 
-    private void fillBackground(List<Byte> wordFrame, int rowNumber, Color background){
-        for(int i = 0; i < rowNumber; i++){
-            for(int j = 0; j < NUMLINES; j++){
-                wordFrame.add(background.getRed());
-                wordFrame.add(background.getGreen());
-                wordFrame.add(background.getBlue());
+    private void staticMessageFill(Color background, int startingRow, int numRowsToFill, int frame){
+        for(int row = startingRow; row < startingRow + numRowsToFill; row++){
+            for(int line = 0; line < NUMLINES; line++ ){
+                int pixelIndex = getAnimationIndex(frame, line, row, 0);
+                setAnimationPixel(pixelIndex, background.toByteArray());
             }
         }
     }
 
-    private List<Byte> convertMessageColor(InputStream original, Color letter, Color background) throws IOException {
-        byte[] originalBytes = ByteStreams.toByteArray(original);
+    private byte[] assignColor(byte[] inputColor, Color letterColor, Color backgroundColor){
+        byte[] black = {00,00,00};
+        byte[] white = {(byte)0xFF,(byte)0xFF,(byte)0xFF};
+        if(inputColor == black || inputColor == white){
+            return backgroundColor.toByteArray();
+        }else{
+            return letterColor.toByteArray();
+        }
+    }
+
+    private List<Byte> convertMessageColor(byte[] original, Color letter, Color background) throws IOException {
         List<Byte> newBytes = new ArrayList();
         int count = 0;
         byte red = 0;
         byte green= 0;
         byte blue= 0;
-        for(byte pixelColor : originalBytes){
+        for(byte pixelColor : original){
             if(count == 0){
                 red = pixelColor;
             } else if(count == 1){
