@@ -16,7 +16,7 @@ CRGB leds[NUMLINES][NUMPIXELS];
 #define ANIM_COMMAND 0xC0
 
 // Setting variables
-uint8_t brightnessVal = 20;
+uint8_t brightnessVal = 35;
 
 void setup() {
 	FastLED.addLeds<NEOPIXEL, LEDPIN1>(leds[0], NUMPIXELS);
@@ -115,21 +115,6 @@ int lcm(int a, int b)
 	return (a*b) / gcd(a, b);
 }
 
-uint32_t colorWheel(uint16_t pos) {
-	pos = 765 - pos;
-	if (pos < 255) {
-		return ((uint32_t)(255 - pos) << 16) | ((uint32_t)(0) << 8) | (pos);
-	}
-	else if (pos < 510) {
-		pos -= 255;
-		return ((uint32_t)(0) << 16) | ((uint32_t)(pos) << 8) | (255 - pos);
-	}
-	else {
-		pos -= 510;
-		return ((uint32_t)(pos) << 16) | ((uint32_t)(255 - pos) << 8) | (0);
-	}
-}
-
 void showFrameHandler() {
 	// Update LEDs
 	FastLED.show();
@@ -206,7 +191,7 @@ void brightnessSetting() {
 }
 
 uint8_t getBrightnessFromScale(byte scaleVal) {
-	return scaleVal * (255 / 100);
+	return scaleVal * (255*1.0 / 100);
 }
 
 void newAnimationHandler() {
@@ -225,6 +210,51 @@ void newStaticMessageHandler() {
 	FastLED.clear();
 	FastLED.show();
 	Serial.write(0x31);
+}
+
+// Color Utilities
+// Returns the Red component of a 32-bit color
+uint8_t Red(uint32_t color)
+{
+	return (color >> 16) & 0xFF;
+}
+
+// Returns the Green component of a 32-bit color
+uint8_t Green(uint32_t color)
+{
+	return (color >> 8) & 0xFF;
+}
+
+// Returns the Blue component of a 32-bit color
+uint8_t Blue(uint32_t color)
+{
+	return color & 0xFF;
+}
+
+uint32_t Color(uint8_t red, uint8_t green, uint8_t blue) {
+	return ((uint32_t)(red) << 16) | ((uint32_t)(green) << 8) | (blue);
+}
+
+// Return color, dimmed by 75% (used by scanner)
+uint32_t DimColor(uint32_t color, uint8_t fadeBy)
+{
+	uint32_t dimColor = Color(max(Red(color) - fadeBy, 0), max(Green(color) - fadeBy, 0), max(Blue(color) - fadeBy, 0));
+	return dimColor;
+}
+
+uint32_t colorWheel(uint16_t pos) {
+	pos = 765 - pos;
+	if (pos < 255) {
+		return ((uint32_t)(255 - pos) << 16) | ((uint32_t)(0) << 8) | (pos);
+	}
+	else if (pos < 510) {
+		pos -= 255;
+		return ((uint32_t)(0) << 16) | ((uint32_t)(pos) << 8) | (255 - pos);
+	}
+	else {
+		pos -= 510;
+		return ((uint32_t)(pos) << 16) | ((uint32_t)(255 - pos) << 8) | (0);
+	}
 }
 
 void setPixel(int line, int Pixel, CRGB color) {
@@ -269,6 +299,9 @@ void storedAnimationHandler(bool useLastAnimation) {
 		case 0x04:
 			fireworkAnimation();
 			break;
+		case 0x30:
+			coUsaFlags();
+			break;
 	}
 	lastAnimationCommand = anim;
 }
@@ -299,11 +332,11 @@ int distanceFromCenter(int line, int pixel, int i, int j) {
 	return abs(i - line) + abs(j - pixel);
 }
 
-void matrixFadeToBlack(uint8_t decayRate, byte numFadeLoops, unsigned long delayLength) {
+void matrixFadeToBlack(bool randomDecay, uint8_t decayRate, byte numFadeLoops, unsigned long delayLength) {
 	for (byte i = 0; i < numFadeLoops; i++) {
 		for (byte j = 0; j < NUMLINES; j++) {
 			for (byte k = 0; k < NUMPIXELS; k++) {
-				if ((random(10) > 5)) {
+				if (!randomDecay || (random(10) > 5)) {
 					leds[j][k].fadeToBlackBy(decayRate);
 				}
 			}
@@ -344,7 +377,7 @@ byte fireFirework(byte pixelTop) {
 			if (line >= 0 && line < NUMLINES && pixel >= 0 && pixel < NUMPIXELS) {
 				byte distanceFactor = distanceFromCenter(startingLine, startingPixel, line, pixel);
 				if (distanceFactor <= fireworkRadius) {
-					byte colorFade = distanceFactor * (255 / (fireworkRadius + 1));
+					byte colorFade = distanceFactor * (255.0 / (fireworkRadius + 1));
 					CRGB startColor = colorWheel((colorIndex + distanceFactor * colorSpread) % 765);
 					CRGB nextColor = CRGB(max(startColor.r - colorFade, 0), max(startColor.g - colorFade, 0), max(startColor.b - colorFade, 0));
 					setPixel(line, pixel, nextColor);
@@ -367,13 +400,194 @@ void fireworkAnimation() {
 			delay(random(0, 300));
 		}
 		byte numFadeLoops = random(18, 40);
-		matrixFadeToBlack(64, numFadeLoops, 50);
+		matrixFadeToBlack(true, 64, numFadeLoops, 50);
 	}
 }
 
 void setMeteorPixels(byte line, int i, int j, uint16_t colorIndex) {
 	if ((i - j < NUMPIXELS) && (i - j >= 0)) {
 		setPixel(line, i - j, colorWheel(colorIndex));
+	}
+}
+
+void raindropsAnimation() {
+	int lead_dot = 0;
+	int angle = 0;
+	while (Serial.available() == 0) {
+
+		EVERY_N_MILLIS_I(timerVar, 20)
+		//EVERY_N_MILLISECONDS(20)
+		{
+
+			uint8_t lead_dot = map(cubicwave8(angle), 0, 256, 0, NUMPIXELS - 1);
+			//angle = angle + 1 % 64;
+
+			/*if (lead_dot == 0) {
+				stopAnimation = false;
+			}
+
+			if (!stopAnimation) {
+				leds[1][lead_dot].b = 255;
+			}
+			if (lead_dot == NUMPIXELS - 1) {
+				stopAnimation = true;
+			}*/
+
+			leds[1][lead_dot].b = 255;
+
+			fadeToBlackBy(leds[1], NUMPIXELS, 30);
+		}
+
+		FastLED.show();
+	}
+
+}
+
+// TEST VARS
+byte verticalSpeedFactor = 15;
+byte horizontalSpeedFactor = 15;
+
+struct GhostVars {
+	uint8_t verticalCount;
+	uint8_t nextPixel;
+	uint8_t angle;
+	//uint32_t color;
+	CRGB color;
+};
+
+//struct GhostVars setupGhost(uint32_t color) {
+struct GhostVars setupGhost(CRGB color) {
+	struct GhostVars result;
+	result.verticalCount = 0;
+	result.nextPixel = 0;
+	result.angle = 0;
+	//result.color = colorWheel(color);
+	result.color = color;
+	return result;
+}
+
+
+int logCount = 0;
+
+void sendGhost(GhostVars &ghost, int factor) {
+
+	ghost.verticalCount = (ghost.verticalCount + 1) % 2;
+	uint8_t lead_dot = map(cos8(ghost.angle), 0, 256, 0, NUMLINES);
+
+	//angle++;
+	ghost.angle = ghost.angle + 2 * factor;//(horizontalSpeedFactor / 3) * (256 / 64);
+
+	if (ghost.verticalCount == 0) {
+		ghost.nextPixel = (ghost.nextPixel + 1) % NUMPIXELS;
+	}
+
+	leds[lead_dot][ghost.nextPixel] = ghost.color;
+}
+
+void tealPurpOrangeGhosts() {
+	CRGB teal = CRGB(17, 159, 159);
+	CRGB purple = CRGB(165, 38, 183);
+	CRGB orange = CRGB(217, 89, 4);
+	triColorGhostGroup(teal, purple, orange);
+}
+
+void triColorGhostGroup(CRGB first, CRGB second, CRGB third) {
+	struct GhostVars ghost1, ghost2, ghost3, ghost4, ghost5, ghost6;
+	ghost1 = setupGhost(first);
+	ghost2 = setupGhost(first);
+	ghost3 = setupGhost(second);
+	ghost4 = setupGhost(second);
+	ghost5 = setupGhost(third);
+	ghost6 = setupGhost(third);
+
+	ghost2.nextPixel = 1;
+	ghost3.nextPixel = 2;
+	ghost4.nextPixel = 3;
+	ghost5.nextPixel = 4;
+	ghost6.nextPixel = 5;
+
+	while (Serial.available() == 0) {
+		EVERY_N_MILLISECONDS(20)
+		{
+			sendGhost(ghost1, 4);
+			sendGhost(ghost2, 4);
+			sendGhost(ghost3, 4);
+			sendGhost(ghost4, 4);
+			sendGhost(ghost5, 4);
+			sendGhost(ghost6, 4);
+
+			for (byte i = 0; i < NUMLINES; i++) {
+				fadeToBlackBy(leds[i], NUMPIXELS, 24);
+			}
+		}
+
+		FastLED.show();
+		//delay(20);
+	}
+}
+
+// TEST CODE
+int bpm = 40;
+byte lead_dot = 0;
+void snakeTrailAnimation() {
+	lead_dot = beatsin8(bpm, 0, NUMPIXELS - 1);
+	leds[1][lead_dot].b = 255;
+
+	EVERY_N_MILLISECONDS(5)
+	{
+		fadeToBlackBy(leds[1], NUMPIXELS, 64);
+		FastLED.show();
+
+		int now = millis();
+
+	}
+}
+
+void testSparkles() {
+	while (Serial.available() == 0) {
+		sparkle(0, 5, 5);
+		sparkle(0, 15, 5);
+		sparkle(0, 25, 5);
+
+		sparkle(2, 5, 5);
+		sparkle(2, 15, 5);
+		sparkle(2, 25, 5);
+
+		sparkle(4, 5, 5);
+		sparkle(4, 15, 5);
+		sparkle(4, 25, 5);
+
+		sparkle(6, 5, 5);
+		sparkle(6, 15, 5);
+		sparkle(6, 25, 5);
+		FastLED.show();
+		/*delay(150);
+
+		FastLED.clear();
+		FastLED.show();
+		delay(600);*/
+	}
+}
+
+void sparkle(byte line, byte pixel, byte length) {
+	byte half = (length / 2);
+	uint16_t color = colorWheel(510);
+	for (byte i = 0; i < length; i++) {
+		//byte test = (i * 200.0 / (length - 1));
+		byte test = 255;
+		byte curPixel = pixel - half + i;
+		byte distance = abs(pixel - curPixel);
+		byte fadeFactor = distance * (200.0 / half);
+		//byte whiteFactor = fadeFactor * (200.0 / half)
+		//setPixel(line, curPixel, color);
+		//if (distance == 0) {
+		//	setPixel(line, curPixel, 255, 255, 255);
+		//}
+		//else {
+		//	setPixel(line, curPixel, 0, test - fadeFactor, 0);
+		//}
+
+		setPixel(line, curPixel, 0, sin8(i+22), 0);
 	}
 }
 
@@ -453,7 +667,7 @@ void fireAnimation(int cooling, int sparkling)
 		int cooldown;
 		for (int i = 0; i < NUMPIXELS; i++) {
 			//heat[i] = qsub8(heat[i], random8(0, ((cooling * 10) / NUMPIXELS) + 2));
-			cooldown = random(0, ((cooling * 10) / NUMPIXELS) + 2);
+			cooldown = random(0, ((cooling * 10.0) / NUMPIXELS) + 2);
 
 			if (cooldown > heat[i]) {
 				heat[i] = 0;
@@ -465,7 +679,7 @@ void fireAnimation(int cooling, int sparkling)
 
 		// Step 2.  Heat from each cell drifts 'up' and diffuses a little
 		for (int k = NUMPIXELS - 1; k >= 2; k--) {
-			heat[k] = (heat[k - 1] + heat[k - 2] + heat[k - 2]) / 3;
+			heat[k] = (heat[k - 1] + heat[k - 2] + heat[k - 2])*1.0 / 3;
 		}
 
 		// Step 3.  Randomly ignite new 'sparks' of heat near the bottom
@@ -492,4 +706,221 @@ void fireAnimation(int cooling, int sparkling)
 	}
 }
 
+// FLAGS
+void coUsaFlags() {
+	FastLED.clear();
+	setupCoFlag(1);
+	setupUsaFlag(16);
+	FastLED.show();
+}
 
+void setupCoFlag(byte startingIndex) {
+	byte st = startingIndex;
+	CRGB red = CRGB(255, 0, 0);
+	CRGB white = CRGB(255, 255, 255);
+	CRGB blue = CRGB(0, 0, 255);
+	CRGB yellow = CRGB(255, 255, 0);
+
+	leds[0][st + 0] = blue;
+	leds[0][st + 1] = blue;
+	leds[0][st + 2] = blue;
+	leds[0][st + 3] = blue;
+	leds[0][st + 4] = blue;
+	leds[0][st + 5] = blue;
+	leds[0][st + 6] = blue;
+	leds[0][st + 7] = blue;
+	leds[0][st + 8] = blue;
+	leds[0][st + 9] = blue;
+	leds[0][st + 10] = blue;
+	leds[0][st + 11] = blue;
+	leds[0][st + 12] = blue;
+
+	leds[1][st + 0] = blue;
+	leds[1][st + 1] = blue;
+	leds[1][st + 2] = blue;
+	leds[1][st + 3] = blue;
+	leds[1][st + 4] = red;
+	leds[1][st + 5] = red;
+	leds[1][st + 6] = red;
+	leds[1][st + 7] = red;
+	leds[1][st + 8] = red;
+	leds[1][st + 9] = blue;
+	leds[1][st + 10] = blue;
+	leds[1][st + 11] = blue;
+	leds[1][st + 12] = blue;
+
+	leds[2][st + 0] = white;
+	leds[2][st + 1] = white;
+	leds[2][st + 2] = white;
+	leds[2][st + 3] = white;
+	leds[2][st + 4] = red;
+	leds[2][st + 5] = yellow;
+	leds[2][st + 6] = yellow;
+	leds[2][st + 7] = yellow;
+	leds[2][st + 8] = white;
+	leds[2][st + 9] = white;
+	leds[2][st + 10] = white;
+	leds[2][st + 11] = white;
+	leds[2][st + 12] = white;
+
+	leds[3][st + 0] = white;
+	leds[3][st + 1] = white;
+	leds[3][st + 2] = white;
+	leds[3][st + 3] = white;
+	leds[3][st + 4] = red;
+	leds[3][st + 5] = yellow;
+	leds[3][st + 6] = yellow;
+	leds[3][st + 7] = yellow;
+	leds[3][st + 8] = white;
+	leds[3][st + 9] = white;
+	leds[3][st + 10] = white;
+	leds[3][st + 11] = white;
+	leds[3][st + 12] = white;
+
+	leds[4][st + 0] = white;
+	leds[4][st + 1] = white;
+	leds[4][st + 2] = white;
+	leds[4][st + 3] = white;
+	leds[4][st + 4] = red;
+	leds[4][st + 5] = yellow;
+	leds[4][st + 6] = yellow;
+	leds[4][st + 7] = yellow;
+	leds[4][st + 8] = white;
+	leds[4][st + 9] = white;
+	leds[4][st + 10] = white;
+	leds[4][st + 11] = white;
+	leds[4][st + 12] = white;
+
+	leds[5][st + 0] = blue;
+	leds[5][st + 1] = blue;
+	leds[5][st + 2] = blue;
+	leds[5][st + 3] = blue;
+	leds[5][st + 4] = red;
+	leds[5][st + 5] = red;
+	leds[5][st + 6] = red;
+	leds[5][st + 7] = red;
+	leds[5][st + 8] = red;
+	leds[5][st + 9] = blue;
+	leds[5][st + 10] = blue;
+	leds[5][st + 11] = blue;
+	leds[5][st + 12] = blue;
+
+	leds[6][st + 0] = blue;
+	leds[6][st + 1] = blue;
+	leds[6][st + 2] = blue;
+	leds[6][st + 3] = blue;
+	leds[6][st + 4] = blue;
+	leds[6][st + 5] = blue;
+	leds[6][st + 6] = blue;
+	leds[6][st + 7] = blue;
+	leds[6][st + 8] = blue;
+	leds[6][st + 9] = blue;
+	leds[6][st + 10] = blue;
+	leds[6][st + 11] = blue;
+	leds[6][st + 12] = blue;
+}
+
+void setupUsaFlag(byte startingIndex) {
+	byte st = startingIndex;
+	CRGB red = CRGB(255, 0, 0);
+	CRGB white = CRGB(255, 255, 255);
+	CRGB blue = CRGB(0, 0, 255);
+
+	leds[0][st + 0] = red;
+	leds[0][st + 1] = red;
+	leds[0][st + 2] = red;
+	leds[0][st + 3] = red;
+	leds[0][st + 4] = red;
+	leds[0][st + 5] = red;
+	leds[0][st + 6] = red;
+	leds[0][st + 7] = red;
+	leds[0][st + 8] = red;
+	leds[0][st + 9] = red;
+	leds[0][st + 10] = red;
+	leds[0][st + 11] = red;
+	leds[0][st + 12] = red;
+
+	leds[1][st + 0] = white;
+	leds[1][st + 1] = white;
+	leds[1][st + 2] = white;
+	leds[1][st + 3] = white;
+	leds[1][st + 4] = white;
+	leds[1][st + 5] = white;
+	leds[1][st + 6] = white;
+	leds[1][st + 7] = white;
+	leds[1][st + 8] = white;
+	leds[1][st + 9] = white;
+	leds[1][st + 10] = white;
+	leds[1][st + 11] = white;
+	leds[1][st + 12] = white;
+
+	leds[2][st + 0] = blue;
+	leds[2][st + 1] = blue;
+	leds[2][st + 2] = blue;
+	leds[2][st + 3] = blue;
+	leds[2][st + 4] = blue;
+	leds[2][st + 5] = blue;
+	leds[2][st + 6] = red;
+	leds[2][st + 7] = red;
+	leds[2][st + 8] = red;
+	leds[2][st + 9] = red;
+	leds[2][st + 10] = red;
+	leds[2][st + 11] = red;
+	leds[2][st + 12] = red;
+
+	leds[3][st + 0] = blue;
+	leds[3][st + 1] = blue;
+	leds[3][st + 2] = blue;
+	leds[3][st + 3] = blue;
+	leds[3][st + 4] = blue;
+	leds[3][st + 5] = blue;
+	leds[3][st + 6] = white;
+	leds[3][st + 7] = white;
+	leds[3][st + 8] = white;
+	leds[3][st + 9] = white;
+	leds[3][st + 10] = white;
+	leds[3][st + 11] = white;
+	leds[3][st + 12] = white;
+
+	leds[4][st + 0] = blue;
+	leds[4][st + 1] = blue;
+	leds[4][st + 2] = blue;
+	leds[4][st + 3] = blue;
+	leds[4][st + 4] = blue;
+	leds[4][st + 5] = blue;
+	leds[4][st + 6] = red;
+	leds[4][st + 7] = red;
+	leds[4][st + 8] = red;
+	leds[4][st + 9] = red;
+	leds[4][st + 10] = red;
+	leds[4][st + 11] = red;
+	leds[4][st + 12] = red;
+
+	leds[5][st + 0] = blue;
+	leds[5][st + 1] = blue;
+	leds[5][st + 2] = blue;
+	leds[5][st + 3] = blue;
+	leds[5][st + 4] = blue;
+	leds[5][st + 5] = blue;
+	leds[5][st + 6] = white;
+	leds[5][st + 7] = white;
+	leds[5][st + 8] = white;
+	leds[5][st + 9] = white;
+	leds[5][st + 10] = white;
+	leds[5][st + 11] = white;
+	leds[5][st + 12] = white;
+
+	leds[6][st + 0] = blue;
+	leds[6][st + 1] = blue;
+	leds[6][st + 2] = blue;
+	leds[6][st + 3] = blue;
+	leds[6][st + 4] = blue;
+	leds[6][st + 5] = blue;
+	leds[6][st + 6] = red;
+	leds[6][st + 7] = red;
+	leds[6][st + 8] = red;
+	leds[6][st + 9] = red;
+	leds[6][st + 10] = red;
+	leds[6][st + 11] = red;
+	leds[6][st + 12] = red;
+}

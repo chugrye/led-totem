@@ -156,6 +156,36 @@
             app:layout_constraintTop_toBottomOf="@+id/meteorRainButton" />
 
         <TextView
+            android:id="@+id/staticFlagsHeader"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:layout_marginLeft="8dp"
+            android:layout_marginRight="8dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="30dp"
+            android:text="@string/header_static_flags"
+            android:textSize="30sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/meteorRainButton" />
+
+        <Button
+            android:id="@+id/coUsaFlagsButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:layout_marginLeft="8dp"
+            android:layout_marginRight="8dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="8dp"
+            android:onClick="onClickCoUsaFlags"
+            android:text="@string/button_co_usa_flags"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/staticFlagsHeader" />
+
+        <TextView
             android:id="@+id/customAnimationHeader"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -164,7 +194,7 @@
             android:textSize="30sp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/fireworksButton" />
+            app:layout_constraintTop_toBottomOf="@+id/coUsaFlagsButton" />
 
         <Button
             android:id="@+id/rgbTrailButton"

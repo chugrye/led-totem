@@ -48,7 +48,7 @@ public class MainActivity extends AppCompatActivity {
     public int brightness;
     public int framesPerSecond;
     Button startButton, sendButton, clearButton, stopButton;
-    Button rgbTrailButton, rainbowTrailButton, rainbowCycleButton, treeButton, meteorRainButton, fireworksButton;
+    Button rgbTrailButton, rainbowTrailButton, rainbowCycleButton, treeButton, meteorRainButton, fireworksButton, coUsaFlagsButton;
     TextView textView;
     EditText editText;
     UsbManager usbManager;
@@ -223,6 +223,9 @@ public class MainActivity extends AppCompatActivity {
         treeButton = (Button) findViewById(R.id.treeButton);
         meteorRainButton = (Button) findViewById(R.id.meteorRainButton);
         fireworksButton = (Button) findViewById(R.id.fireworksButton);
+
+        coUsaFlagsButton = (Button) findViewById(R.id.coUsaFlagsButton);
+
         editText = (EditText) findViewById(R.id.editText);
         textView = (TextView) findViewById(R.id.textView);
         textView.setMovementMethod(new ScrollingMovementMethod());
@@ -255,6 +258,7 @@ public class MainActivity extends AppCompatActivity {
         treeButton.setEnabled(enableFlag);
         meteorRainButton.setEnabled(enableFlag);
         fireworksButton.setEnabled(enableFlag);
+        coUsaFlagsButton.setEnabled(enableFlag);
         textView.setEnabled(enableFlag);
     }
 
@@ -538,6 +542,13 @@ public class MainActivity extends AppCompatActivity {
         {
             Log.e("uh oh", e.getMessage());
         }
+    }
+
+    // FLAGS
+    public void onClickCoUsaFlags(View view) {
+        storedAnimationCommand();
+        byte[] animCommand = new byte[] { (byte)0x30 };
+        serialPort.write(animCommand);
     }
 
     public void onClickColoradoWhiteFlag(View view) {
