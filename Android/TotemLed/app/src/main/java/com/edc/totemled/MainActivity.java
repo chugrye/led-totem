@@ -575,8 +575,9 @@ public class MainActivity extends AppCompatActivity {
 
     public void onClickWord(View view) {
         Log.i("Got here", "got here");
+        String message = editText.getText().toString();
         try {
-            showStaticMessage("I LOVE TITTY  ", new Color((byte)200,(byte)155,(byte)0), new Color((byte)20,(byte)0,(byte)100), (byte)0x07);
+            showStaticMessage(message, new Color((byte)200,(byte)155,(byte)0), new Color((byte)20,(byte)0,(byte)100), (byte)0x07);
         } catch (IOException e) {
             Log.e("uh oh", e.getMessage());
         }
@@ -645,7 +646,7 @@ public class MainActivity extends AppCompatActivity {
     private void convertWordToStaticAnimation(String word, Color letterColor, Color backgroundColor, int wordNumber) throws IOException {
         List<byte[]> letterList = new ArrayList();
         for( int letter = 0; letter < word.length(); letter++ ){
-            String binName = word.charAt(letter) + ".bin";
+            String binName = word.toUpperCase().charAt(letter) + ".bin";
             InputStream stream = getAssets().open(binName);
             letterList.add(IOUtils.toByteArray(stream));
             stream.close();
