@@ -48,8 +48,7 @@ public class MainActivity extends AppCompatActivity {
     public int brightness;
     public int framesPerSecond;
     Button startButton, sendButton, clearButton, stopButton;
-    Button rgbTrailButton, rainbowTrailButton, rainbowCycleButton, treeButton, meteorRainButton, fireworksButton,
-            coUsaFlagButton;
+    Button rgbTrailButton, rainbowTrailButton, rainbowCycleButton, treeButton, meteorRainButton, fireworksButton, coUsaFlagsButton;
     TextView textView;
     EditText editText;
     UsbManager usbManager;
@@ -225,7 +224,7 @@ public class MainActivity extends AppCompatActivity {
         meteorRainButton = (Button) findViewById(R.id.meteorRainButton);
         fireworksButton = (Button) findViewById(R.id.fireworksButton);
 
-        coUsaFlagButton = (Button) findViewById(R.id.coUsaFlagButton);
+        coUsaFlagsButton = (Button) findViewById(R.id.coUsaFlagsButton);
 
         editText = (EditText) findViewById(R.id.editText);
         textView = (TextView) findViewById(R.id.textView);
@@ -259,7 +258,7 @@ public class MainActivity extends AppCompatActivity {
         treeButton.setEnabled(enableFlag);
         meteorRainButton.setEnabled(enableFlag);
         fireworksButton.setEnabled(enableFlag);
-        coUsaFlagButton.setEnabled(enableFlag);
+        coUsaFlagsButton.setEnabled(enableFlag);
         textView.setEnabled(enableFlag);
     }
 
