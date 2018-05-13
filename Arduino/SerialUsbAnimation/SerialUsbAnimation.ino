@@ -43,6 +43,8 @@ int command;
 
 int lastCommand;
 int lastAnimationCommand;
+byte staticMessageDelay = 0x00;
+bool isStaticWordAnimation = false;
 
 void loop() {
 	while (Serial.available() == 0);
@@ -75,10 +77,25 @@ void loop() {
 		case 0x03:
 			newAnimationHandler();
 			break;
+
+		// Start new static message
+		case 0x31:
+
+			newStaticMessageHandler();
+			break;
 	}
 	lastCommand = command;
 }
 
+int getStaticMessageDelay() 
+{
+	if(staticMessageDelay > 0x08)
+	{
+		staticMessageDelay = 0x01;
+	}
+	//return 2000 / 8 * (int)staticMessageDelay;
+	return 1000;
+}
 // Greatest common denominator
 int gcd(int a, int b)
 {
@@ -104,6 +121,9 @@ void showFrameHandler() {
 
 	// Tell the controller we're ready
 	// We don't want to be receiving serial data during leds.show() because data will be dropped
+	if (isStaticWordAnimation == true) {
+		delay(getStaticMessageDelay());
+	}
 	Serial.write(0x00);
 }
 
@@ -175,10 +195,21 @@ uint8_t getBrightnessFromScale(byte scaleVal) {
 }
 
 void newAnimationHandler() {
+	isStaticWordAnimation = false;
 	animReadError = false;
 	FastLED.clear();
 	FastLED.show();
 	Serial.write(0x03);
+}
+
+void newStaticMessageHandler() {
+	while (Serial.available() == 0);
+	staticMessageDelay = Serial.read();
+	isStaticWordAnimation = true;
+	animReadError = false;
+	FastLED.clear();
+	FastLED.show();
+	Serial.write(0x31);
 }
 
 // Color Utilities
