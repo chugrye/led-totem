@@ -31,5 +31,7 @@
     <string name="header_arduino_animations">ARDUINO</string>
     <string name="header_custom_animations">CUSTOM Animations</string>
     <string name="button_fireworks">FIREWORKS!!!</string>
+    <string name="header_static_flags">Flags (static)</string>
+    <string name="button_co_usa_flags">CO + USA Flags</string>
 
 </resources>
