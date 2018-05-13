@@ -109,6 +109,13 @@ public class MainActivity extends AppCompatActivity {
                     killFrame = false;
                     sendFrame(currentFrame);
                 }
+
+                if (arg0[0] == (byte)0x31) {
+                    // We have already cleared so now we
+                    // can start rendering animation
+                    killFrame = false;
+                    sendFrame(currentFrame);
+                }
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -383,6 +390,10 @@ public class MainActivity extends AppCompatActivity {
         serialPort.write(clearFrameCommand);
     }
 
+    public void sendClearAndAnimateWord(byte delay) {
+        byte[] clearFrameWordCommand = new byte[] { (byte)0x31, delay };
+        serialPort.write(clearFrameWordCommand);
+    }
     /**
      * Convert our animation multidimensional array into single dimension
      * @return byte[] animation data
@@ -554,7 +565,7 @@ public class MainActivity extends AppCompatActivity {
     public void onClickWord(View view) {
         Log.i("Got here", "got here");
         try {
-            showStaticMessage("I LOVE TITTY  ", new Color((byte)200,(byte)155,(byte)0), new Color((byte)20,(byte)0,(byte)100));
+            showStaticMessage("I LOVE TITTY  ", new Color((byte)200,(byte)155,(byte)0), new Color((byte)20,(byte)0,(byte)100), (byte)0x07);
         } catch (IOException e) {
             Log.e("uh oh", e.getMessage());
         }
@@ -610,16 +621,14 @@ public class MainActivity extends AppCompatActivity {
         sendClear();
     }
 
-    private void showStaticMessage(String message, Color messageColor, Color backgroundColor) throws IOException {
+    private void showStaticMessage(String message, Color messageColor, Color backgroundColor, byte delayLevel) throws IOException {
         String[] words = message.split(" ");
         animationSetup(words.length);
         for( int wordPosition = 0; wordPosition < words.length; wordPosition++ ){
             convertWordToStaticAnimation(words[wordPosition], messageColor, backgroundColor, wordPosition);
         }
 
-        framesPerSecond = 2;
-
-        sendClear();
+        sendClearAndAnimateWord(delayLevel);
     }
 
     private void convertWordToStaticAnimation(String word, Color letterColor, Color backgroundColor, int wordNumber) throws IOException {
