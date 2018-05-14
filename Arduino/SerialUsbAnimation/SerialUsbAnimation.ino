@@ -16,7 +16,7 @@ CRGB leds[NUMLINES][NUMPIXELS];
 #define ANIM_COMMAND 0xC0
 
 // Setting variables
-uint8_t brightnessVal = 35;
+uint8_t brightnessVal = 20;
 
 void setup() {
 	FastLED.addLeds<NEOPIXEL, LEDPIN1>(leds[0], NUMPIXELS);
@@ -299,6 +299,8 @@ void storedAnimationHandler(bool useLastAnimation) {
 		case 0x04:
 			fireworkAnimation();
 			break;
+		case 0x05:
+			tealPurpleOrangeHelix();
 		case 0x30:
 			coUsaFlags();
 			break;
@@ -443,39 +445,38 @@ void raindropsAnimation() {
 
 }
 
-// TEST VARS
-byte verticalSpeedFactor = 15;
-byte horizontalSpeedFactor = 15;
-
 struct GhostVars {
+	//uint32_t color;
+	CRGB color;
+	uint8_t horizontalFactor;
+	uint8_t verticalFactor;
 	uint8_t verticalCount;
 	uint8_t nextPixel;
 	uint8_t angle;
-	//uint32_t color;
-	CRGB color;
 };
 
 //struct GhostVars setupGhost(uint32_t color) {
 struct GhostVars setupGhost(CRGB color) {
 	struct GhostVars result;
+	//result.color = colorWheel(color);
+	result.color = color;
+
+	result.horizontalFactor = 4;
+	result.verticalFactor = 2;
+
 	result.verticalCount = 0;
 	result.nextPixel = 0;
 	result.angle = 0;
-	//result.color = colorWheel(color);
-	result.color = color;
+
 	return result;
 }
 
+void sendGhost(GhostVars &ghost) {
 
-int logCount = 0;
-
-void sendGhost(GhostVars &ghost, int factor) {
-
-	ghost.verticalCount = (ghost.verticalCount + 1) % 2;
+	ghost.verticalCount = (ghost.verticalCount + 1) % ghost.verticalFactor;
 	uint8_t lead_dot = map(cos8(ghost.angle), 0, 256, 0, NUMLINES);
 
-	//angle++;
-	ghost.angle = ghost.angle + 2 * factor;//(horizontalSpeedFactor / 3) * (256 / 64);
+	ghost.angle = ghost.angle + 2 * ghost.horizontalFactor;
 
 	if (ghost.verticalCount == 0) {
 		ghost.nextPixel = (ghost.nextPixel + 1) % NUMPIXELS;
@@ -484,14 +485,14 @@ void sendGhost(GhostVars &ghost, int factor) {
 	leds[lead_dot][ghost.nextPixel] = ghost.color;
 }
 
-void tealPurpOrangeGhosts() {
+void tealPurpleOrangeHelix() {
 	CRGB teal = CRGB(17, 159, 159);
 	CRGB purple = CRGB(165, 38, 183);
 	CRGB orange = CRGB(217, 89, 4);
-	triColorGhostGroup(teal, purple, orange);
+	triColorGhostHelix(teal, purple, orange, 40);
 }
 
-void triColorGhostGroup(CRGB first, CRGB second, CRGB third) {
+void triColorGhostHelix(CRGB first, CRGB second, CRGB third, byte tickSpeed) {
 	struct GhostVars ghost1, ghost2, ghost3, ghost4, ghost5, ghost6;
 	ghost1 = setupGhost(first);
 	ghost2 = setupGhost(first);
@@ -500,21 +501,26 @@ void triColorGhostGroup(CRGB first, CRGB second, CRGB third) {
 	ghost5 = setupGhost(third);
 	ghost6 = setupGhost(third);
 
-	ghost2.nextPixel = 1;
-	ghost3.nextPixel = 2;
-	ghost4.nextPixel = 3;
-	ghost5.nextPixel = 4;
-	ghost6.nextPixel = 5;
+	ghost2.nextPixel = 9;
+	ghost2.angle = 128;
+
+	ghost3.nextPixel = 10;
+	ghost4.nextPixel = 19;
+	ghost4.angle = 128;
+
+	ghost5.nextPixel = 20;
+	ghost6.nextPixel = 29;
+	ghost6.angle = 128;
 
 	while (Serial.available() == 0) {
-		EVERY_N_MILLISECONDS(20)
+		EVERY_N_MILLISECONDS(tickSpeed)
 		{
-			sendGhost(ghost1, 4);
-			sendGhost(ghost2, 4);
-			sendGhost(ghost3, 4);
-			sendGhost(ghost4, 4);
-			sendGhost(ghost5, 4);
-			sendGhost(ghost6, 4);
+			sendGhost(ghost1);
+			sendGhost(ghost2);
+			sendGhost(ghost3);
+			sendGhost(ghost4);
+			sendGhost(ghost5);
+			sendGhost(ghost6);
 
 			for (byte i = 0; i < NUMLINES; i++) {
 				fadeToBlackBy(leds[i], NUMPIXELS, 24);
@@ -522,7 +528,6 @@ void triColorGhostGroup(CRGB first, CRGB second, CRGB third) {
 		}
 
 		FastLED.show();
-		//delay(20);
 	}
 }
 
