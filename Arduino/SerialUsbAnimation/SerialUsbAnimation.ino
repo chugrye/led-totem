@@ -418,12 +418,12 @@ void raindropsAnimation() {
 	int angle = 0;
 	while (Serial.available() == 0) {
 
-		EVERY_N_MILLIS_I(timerVar, 20)
-		//EVERY_N_MILLISECONDS(20)
+		//EVERY_N_MILLIS_I(timerVar, 20)
+		EVERY_N_MILLISECONDS(20)
 		{
 
 			uint8_t lead_dot = map(cubicwave8(angle), 0, 256, 0, NUMPIXELS - 1);
-			//angle = angle + 1 % 64;
+			angle = angle + 1 % 64;
 
 			/*if (lead_dot == 0) {
 				stopAnimation = false;
@@ -446,14 +446,18 @@ void raindropsAnimation() {
 
 }
 
+// TODO: Change this to class maybe?
 struct GhostVars {
 	//uint32_t color;
 	CRGB color;
-	uint8_t horizontalFactor;
+	uint8_t yAngle;
+	uint8_t yAngleFactor;
+
+	uint8_t xAngle;
+	uint8_t xAngleFactor;
+
 	uint8_t verticalFactor;
-	uint8_t verticalCount;
-	uint8_t nextPixel;
-	uint8_t angle;
+	uint16_t verticalCount;
 };
 
 //struct GhostVars setupGhost(uint32_t color) {
@@ -462,35 +466,54 @@ struct GhostVars setupGhost(CRGB color) {
 	//result.color = colorWheel(color);
 	result.color = color;
 
-	result.horizontalFactor = 4;
+	result.verticalCount = 0;
 	result.verticalFactor = 2;
 
-	result.verticalCount = 0;
-	result.nextPixel = 0;
-	result.angle = 0;
+	result.xAngle = 0;
+	result.xAngleFactor = 4;
+
+	result.yAngle = 0;
+	result.yAngleFactor = 0;
 
 	return result;
 }
 
+void setVerticalCountFromPixel(GhostVars &ghost, byte pixel) {
+	ghost.verticalCount = pixel * ghost.verticalFactor;
+}
+
 void sendGhost(GhostVars &ghost) {
 
-	ghost.verticalCount = (ghost.verticalCount + 1) % ghost.verticalFactor;
-	uint8_t lead_dot = map(cos8(ghost.angle), 0, 256, 0, NUMLINES);
+	//ghost.verticalCount = (ghost.verticalCount + 1) % ghost.verticalFactor;
+	uint8_t ySpiralDist = NUMLINES;
+	uint8_t yPixel = map(cos8(ghost.yAngle), 0, 256, 0, ySpiralDist);
+	uint8_t lead_dot = map(cos8(ghost.xAngle), 0, 256, 0, NUMLINES);
 
-	ghost.angle = ghost.angle + 2 * ghost.horizontalFactor;
+	ghost.xAngle = ghost.xAngle + 2 * ghost.xAngleFactor;
+	ghost.yAngle = ghost.yAngle + 2 * ghost.yAngleFactor;
 
-	if (ghost.verticalCount == 0) {
-		ghost.nextPixel = (ghost.nextPixel + 1) % NUMPIXELS;
-	}
+	ghost.verticalCount = (ghost.verticalCount + 1) % (ghost.verticalFactor * NUMPIXELS);
+	uint8_t nextPixel = (ghost.verticalCount / ghost.verticalFactor + yPixel) % NUMPIXELS;
 
-	leds[lead_dot][ghost.nextPixel] = ghost.color;
+	leds[lead_dot][nextPixel] = ghost.color;
 }
 
 void tealPurpleOrangeHelix() {
 	CRGB teal = CRGB(17, 159, 159);
 	CRGB purple = CRGB(165, 38, 183);
 	CRGB orange = CRGB(217, 89, 4);
+
+	/*CRGB teal = CRGB(100, 238, 77);
+	CRGB purple = CRGB(217, 89, 4);
+	CRGB orange = CRGB(246, 46, 30);*/
 	triColorGhostHelix(teal, purple, orange, 40);
+}
+
+void tealPurpleBlueSpirals() {
+	CRGB teal = CRGB(8, 235, 139);
+	CRGB purple = CRGB(65, 140, 220);
+	CRGB lightBlue = CRGB(155, 39, 219);
+	triColorSpirals(teal, purple, lightBlue, 40);
 }
 
 void triColorGhostHelix(CRGB first, CRGB second, CRGB third, byte tickSpeed) {
@@ -502,16 +525,73 @@ void triColorGhostHelix(CRGB first, CRGB second, CRGB third, byte tickSpeed) {
 	ghost5 = setupGhost(third);
 	ghost6 = setupGhost(third);
 
-	ghost2.nextPixel = 9;
-	ghost2.angle = 128;
+	setVerticalCountFromPixel(ghost2, 9);
+	ghost2.xAngle = 128;
 
-	ghost3.nextPixel = 10;
-	ghost4.nextPixel = 19;
-	ghost4.angle = 128;
+	setVerticalCountFromPixel(ghost3, 10);
+	setVerticalCountFromPixel(ghost4, 19);
+	ghost4.xAngle = 128;
 
-	ghost5.nextPixel = 20;
-	ghost6.nextPixel = 29;
-	ghost6.angle = 128;
+	setVerticalCountFromPixel(ghost5, 20);
+	setVerticalCountFromPixel(ghost6, 29);
+	ghost6.xAngle = 128;
+
+	while (Serial.available() == 0) {
+		EVERY_N_MILLISECONDS(tickSpeed)
+		{
+			sendGhost(ghost1);
+			sendGhost(ghost2);
+			sendGhost(ghost3);
+			sendGhost(ghost4);
+			sendGhost(ghost5);
+			sendGhost(ghost6);
+
+			for (byte i = 0; i < NUMLINES; i++) {
+				fadeToBlackBy(leds[i], NUMPIXELS, 24);
+			}
+		}
+
+		FastLED.show();
+	}
+}
+
+void triColorSpirals(CRGB first, CRGB second, CRGB third, byte tickSpeed) {
+	struct GhostVars ghost1, ghost2, ghost3, ghost4, ghost5, ghost6;
+	ghost1 = setupGhost(first);
+	ghost2 = setupGhost(second);
+	ghost3 = setupGhost(third);
+	ghost4 = setupGhost(first);
+	ghost5 = setupGhost(second);
+	ghost6 = setupGhost(third);
+
+	ghost1.yAngle = 64;
+	ghost1.verticalFactor = 8;
+	ghost1.yAngleFactor = 4;
+
+	setVerticalCountFromPixel(ghost2, 15);
+	ghost2.yAngle = 64;
+	ghost2.verticalFactor = 8;
+	ghost2.yAngleFactor = 4;
+
+	setVerticalCountFromPixel(ghost3, 30);
+	ghost3.yAngle = 64;
+	ghost3.verticalFactor = 8;
+	ghost3.yAngleFactor = 4;
+
+	setVerticalCountFromPixel(ghost4, 45);
+	ghost4.yAngle = 64;
+	ghost4.verticalFactor = 8;
+	ghost4.yAngleFactor = 4;
+
+	setVerticalCountFromPixel(ghost5, 60);
+	ghost5.yAngle = 64;
+	ghost5.verticalFactor = 8;
+	ghost5.yAngleFactor = 4;
+
+	setVerticalCountFromPixel(ghost6, 75);
+	ghost6.yAngle = 64;
+	ghost6.verticalFactor = 8;
+	ghost6.yAngleFactor = 4;
 
 	while (Serial.available() == 0) {
 		EVERY_N_MILLISECONDS(tickSpeed)
