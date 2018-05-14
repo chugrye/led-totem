@@ -301,6 +301,7 @@ void storedAnimationHandler(bool useLastAnimation) {
 			break;
 		case 0x05:
 			tealPurpleOrangeHelix();
+			break;
 		case 0x30:
 			coUsaFlags();
 			break;
