@@ -32,6 +32,8 @@ void setup() {
 
 	// Set initial brightness to 20%
 	FastLED.setBrightness(getBrightnessFromScale(brightnessVal));
+	FastLED.clear();
+	FastLED.show();
 }
 
 // Error variables
@@ -302,6 +304,9 @@ void storedAnimationHandler(bool useLastAnimation) {
 		case 0x05:
 			tealPurpleOrangeHelix();
 			break;
+		case 0x06:
+			tealPurpleBlueSpirals();
+			break;
 		case 0x30:
 			coUsaFlags();
 			break;
@@ -568,27 +573,27 @@ void triColorSpirals(CRGB first, CRGB second, CRGB third, byte tickSpeed) {
 	ghost1.verticalFactor = 8;
 	ghost1.yAngleFactor = 4;
 
-	setVerticalCountFromPixel(ghost2, 15);
+	setVerticalCountFromPixel(ghost2, 20);
 	ghost2.yAngle = 64;
 	ghost2.verticalFactor = 8;
 	ghost2.yAngleFactor = 4;
 
-	setVerticalCountFromPixel(ghost3, 30);
+	setVerticalCountFromPixel(ghost3, 40);
 	ghost3.yAngle = 64;
 	ghost3.verticalFactor = 8;
 	ghost3.yAngleFactor = 4;
 
-	setVerticalCountFromPixel(ghost4, 45);
+	setVerticalCountFromPixel(ghost4, 60);
 	ghost4.yAngle = 64;
 	ghost4.verticalFactor = 8;
 	ghost4.yAngleFactor = 4;
 
-	setVerticalCountFromPixel(ghost5, 60);
+	setVerticalCountFromPixel(ghost5, 80);
 	ghost5.yAngle = 64;
 	ghost5.verticalFactor = 8;
 	ghost5.yAngleFactor = 4;
 
-	setVerticalCountFromPixel(ghost6, 75);
+	setVerticalCountFromPixel(ghost6, 100);
 	ghost6.yAngle = 64;
 	ghost6.verticalFactor = 8;
 	ghost6.yAngleFactor = 4;

@@ -535,6 +535,18 @@ public class MainActivity extends AppCompatActivity {
         serialPort.write(animCommand);
     }
 
+    public void onClickHelixTPO(View view) {
+        storedAnimationCommand();
+        byte[] animCommand = new byte[] { (byte)0x05 };
+        serialPort.write(animCommand);
+    }
+
+    public void onClickSpiralsTPB(View view) {
+        storedAnimationCommand();
+        byte[] animCommand = new byte[] { (byte)0x06 };
+        serialPort.write(animCommand);
+    }
+
     public void onClickTree(View view) {
         try {
             playAnimationFromFile(getAssets().open("tree.bin"));

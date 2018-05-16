@@ -155,6 +155,38 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/meteorRainButton" />
 
+        <Button
+            android:id="@+id/helixTPOButton"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginLeft="8dp"
+            android:layout_marginRight="8dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="8dp"
+            android:onClick="onClickHelixTPO"
+            android:text="@string/button_helix_tpo"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/fireworksButton" />
+
+        <Button
+            android:id="@+id/spiralsTPBButton"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginLeft="8dp"
+            android:layout_marginRight="8dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="8dp"
+            android:onClick="onClickSpiralsTPB"
+            android:text="@string/button_spirals_tpb"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/helixTPOButton" />
+
         <TextView
             android:id="@+id/staticFlagsHeader"
             android:layout_width="wrap_content"
@@ -168,7 +200,7 @@
             android:textSize="30sp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/fireworksButton" />
+            app:layout_constraintTop_toBottomOf="@+id/spiralsTPBButton" />
 
         <Button
             android:id="@+id/coUsaFlagsButton"

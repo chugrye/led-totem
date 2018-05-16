@@ -33,5 +33,7 @@
     <string name="button_fireworks">FIREWORKS!!!</string>
     <string name="header_static_flags">Flags (static)</string>
     <string name="button_co_usa_flags">CO + USA Flags</string>
+    <string name="button_helix_tpo">Helix (Teal Purple Orange)</string>
+    <string name="button_spirals_tpb">Spirals (Teal Purple Blue)</string>
 
 </resources>
