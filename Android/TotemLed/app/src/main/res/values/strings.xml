@@ -10,6 +10,8 @@
 
     <string name="title_fps">Frames Per Second</string>
     <string name="pref_fps">pref_fps</string>
+    <string name="title_static_message_delay">Static Message Delay</string>
+    <string name="pref_static_message_delay">pref_static_message_delay</string>
     <string name="summary_fps">Specify the animation speed</string>
     <string name="title_activity_settings">Settings</string>
 
@@ -28,6 +30,7 @@
 
     <!-- Color Palettes -->
     <string name="pref_header_color_palettes">Color Palettes</string>
+    <string name="pref_message_color_palettes">Message Color Palettes</string>
     <string name="header_arduino_animations">ARDUINO</string>
     <string name="header_custom_animations">CUSTOM Animations</string>
     <string name="button_fireworks">FIREWORKS!!!</string>

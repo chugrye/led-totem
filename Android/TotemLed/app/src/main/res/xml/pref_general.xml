@@ -13,4 +13,10 @@
         android:key="@string/pref_fps"
         android:title="@string/title_fps" />
 
+    <ListPreference
+        android:defaultValue="4"
+        android:entries="@array/static_message_delay_values"
+        android:entryValues="@array/static_message_delay_values"
+        android:key="pref_static_message_delay"
+        android:title="@string/title_static_message_delay" />
 </PreferenceScreen>
