@@ -48,7 +48,28 @@ int lastAnimationCommand;
 byte staticMessageDelay = 0x00;
 bool isStaticWordAnimation = false;
 
+bool useAnimationLoop = false;
+const long storedAnimLoopInterval = 45000;
+//const long storedAnimLoopInterval = 3000;
+
+long reduceAnimLoopInterval = 0;
+
+unsigned long currentMillis;
+unsigned long previousMillis;
+
+int* animationLoopPtr;
+int animationLoopSize;
+int animationLoopIndex;
+
+// Animation loop command arrays
+// #1 - Full Loop
+int animationLoop1[6] = { 0x02, 0x30, 0x03, 0x05, 0x04, 0x06 };
+
+// #2 - Helix color loop
+int animationLoop2[3] = { 0x05, 0x17, 0x15 };
+
 void loop() {
+	currentMillis = millis();
 	while (Serial.available() == 0);
 	command = Serial.read();
 
@@ -87,6 +108,19 @@ void loop() {
 			break;
 	}
 	lastCommand = command;
+}
+
+bool continueStoredAnimation() {
+	bool result = true;
+	if (useAnimationLoop) {
+		currentMillis = millis();
+		if (currentMillis - previousMillis >= (storedAnimLoopInterval - reduceAnimLoopInterval)) {
+			reduceAnimLoopInterval = 0;
+			previousMillis = currentMillis;
+			result = false;
+		}
+	}
+	return result && Serial.available() == 0;
 }
 
 int getStaticMessageDelay() 
@@ -281,37 +315,88 @@ void setAll(int line, byte red, byte green, byte blue) {
 
 void storedAnimationHandler(bool useLastAnimation) {
 	int anim;
+	int loopAnim = -1;
 	// Find out which setting is being accessed
 	if (useLastAnimation) {
 		anim = lastAnimationCommand;
 	} else {
 		while (Serial.available() == 0);
 		anim = Serial.read();
+		// If we hit a new command we will kill storedLoop
+		useAnimationLoop = false;
 	}
 
-	FastLED.clear();
+	do {
+		FastLED.clear();
+		switch (anim) {
+			case 0x02:
+				rainbowCycleAnimation();
+				break;
+			case 0x03:
+				meteorRainAnimation();
+				break;
+			case 0x04:
+				fireworkAnimation();
+				break;
+			case 0x05:
+				tealPurpleOrangeHelix();
+				break;
+			case 0x06:
+				tealPurpleBlueSpirals();
+				loopAnim = anim;
+				break;
+			case 0x20:
+				bluePinkPurpHelix();
+				break;
+			case 0x21:
+				blueYellowHelix();
+				break;
+			case 0x50:
+				fullSetAnimationLoop();
+				loopAnim = anim;
+				break;
+			case 0x51:
+				helixColorLoop();
+				loopAnim = anim;
+				break;
+			case 0x30:
+				coUsaFlags();
+				break;
+		}
+		if (Serial.available() != 0) {
+			useAnimationLoop = false;
+		}
+		else {
+			anim = getNextLoopAnimation();
+		}
+	} while (useAnimationLoop); // read next anim if in animationLoop
 
-	switch (anim) {
-		case 0x02:
-			rainbowCycleAnimation();
-			break;
-		case 0x03:
-			meteorRainAnimation();
-			break;
-		case 0x04:
-			fireworkAnimation();
-			break;
-		case 0x05:
-			tealPurpleOrangeHelix();
-			break;
-		case 0x06:
-			tealPurpleBlueSpirals();
-			break;
-		case 0x30:
-			coUsaFlags();
-			break;
+
+	if (loopAnim >= 0) {
+		anim = loopAnim;
 	}
 	lastAnimationCommand = anim;
+}
+
+void initializeAnimationLoop(int* curAnimationLoop, int loopSize) {
+	useAnimationLoop = true;
+	animationLoopPtr = curAnimationLoop;
+	animationLoopSize = loopSize;
+	// Starting at -1 since we increase the counter before getNextLoopAnimation
+	animationLoopIndex = -1;
+}
+
+int getNextLoopAnimation() {
+	animationLoopIndex = (animationLoopIndex + 1) % animationLoopSize;
+	return animationLoopPtr[animationLoopIndex];
+}
+
+void fullSetAnimationLoop() {
+	initializeAnimationLoop(animationLoop1, sizeof(animationLoop1));
+}
+
+void helixColorLoop() {
+	initializeAnimationLoop(animationLoop2, sizeof(animationLoop2));
 }
 
 void rainbowCycleAnimation() {
@@ -321,7 +406,7 @@ void rainbowCycleAnimation() {
 	int maxCycleIndex = lcm(numIntervals, NUMPIXELS);
 	byte red, green, blue;
 	byte counter = 0;
-	while (Serial.available() == 0) {
+	while (continueStoredAnimation()) {
 		for (byte line = 0; line < NUMLINES; line++) {
 			for (byte pixel = 0; pixel < NUMPIXELS; pixel++) {
 				byte factor = (rainbowTrailFrameCount + pixel) % numIntervals;
@@ -400,7 +485,7 @@ byte fireFirework(byte pixelTop) {
 }
 
 void fireworkAnimation() {
-	while (Serial.available() == 0) {
+	while (continueStoredAnimation()) {
 		byte fireworkCount = random(1, 4);
 		byte lastPixelIndex = 0;
 		for (int i = 0; i < fireworkCount; i++) {
@@ -421,7 +506,7 @@ void setMeteorPixels(byte line, int i, int j, uint16_t colorIndex) {
 void raindropsAnimation() {
 	int lead_dot = 0;
 	int angle = 0;
-	while (Serial.available() == 0) {
+	while (continueStoredAnimation()) {
 
 		//EVERY_N_MILLIS_I(timerVar, 20)
 		EVERY_N_MILLISECONDS(20)
@@ -514,6 +599,23 @@ void tealPurpleOrangeHelix() {
 	triColorGhostHelix(teal, purple, orange, 40);
 }
 
+
+void blueYellowHelix() {
+	CRGB blue = CRGB(2, 0, 90);
+	CRGB lightBlue = CRGB(37, 105, 190);
+	CRGB yellow = CRGB(217, 89, 4);
+
+	triColorGhostHelix(blue, lightBlue, yellow, 40);
+}
+
+void bluePinkPurpHelix() {
+	CRGB blue = CRGB(42, 163, 221);
+	CRGB pink = CRGB(153, 0, 71);
+	CRGB purple = CRGB(47, 0, 122);
+
+	triColorGhostHelix(blue, pink, purple, 40);
+}
+
 void tealPurpleBlueSpirals() {
 	CRGB teal = CRGB(8, 235, 139);
 	CRGB purple = CRGB(65, 140, 220);
@@ -541,7 +643,7 @@ void triColorGhostHelix(CRGB first, CRGB second, CRGB third, byte tickSpeed) {
 	setVerticalCountFromPixel(ghost6, 29);
 	ghost6.xAngle = 128;
 
-	while (Serial.available() == 0) {
+	while (continueStoredAnimation()) {
 		EVERY_N_MILLISECONDS(tickSpeed)
 		{
 			sendGhost(ghost1);
@@ -598,7 +700,7 @@ void triColorSpirals(CRGB first, CRGB second, CRGB third, byte tickSpeed) {
 	ghost6.verticalFactor = 8;
 	ghost6.yAngleFactor = 4;
 
-	while (Serial.available() == 0) {
+	while (continueStoredAnimation()) {
 		EVERY_N_MILLISECONDS(tickSpeed)
 		{
 			sendGhost(ghost1);
@@ -635,7 +737,7 @@ void snakeTrailAnimation() {
 }
 
 void testSparkles() {
-	while (Serial.available() == 0) {
+	while (continueStoredAnimation()) {
 		sparkle(0, 5, 5);
 		sparkle(0, 15, 5);
 		sparkle(0, 25, 5);
@@ -706,7 +808,7 @@ void meteorRainAnimation() {
 
 	int i = 0;
 	int maxI = NUMPIXELS * 3;
-	while (Serial.available() == 0) {
+	while (continueStoredAnimation()) {
 		i++;
 		c1 = i % maxI;
 		c2 = ((i - maxI/4) % maxI + maxI) % maxI;
@@ -799,10 +901,13 @@ void fireAnimation(int cooling, int sparkling)
 
 // FLAGS
 void coUsaFlags() {
-	FastLED.clear();
 	setupCoFlag(1);
 	setupUsaFlag(16);
 	FastLED.show();
+
+	// reduce to 20 max seconds in any loop
+	reduceAnimLoopInterval = max(storedAnimLoopInterval - 20000, 0);
+	while (continueStoredAnimation()) {};
 }
 
 void setupCoFlag(byte startingIndex) {

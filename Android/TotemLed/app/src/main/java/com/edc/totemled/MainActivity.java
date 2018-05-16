@@ -48,7 +48,9 @@ public class MainActivity extends AppCompatActivity {
     public int brightness;
     public int framesPerSecond;
     Button startButton, sendButton, clearButton, stopButton;
-    Button rgbTrailButton, rainbowTrailButton, rainbowCycleButton, treeButton, meteorRainButton, fireworksButton, coUsaFlagsButton;
+    Button rgbTrailButton, rainbowTrailButton, rainbowCycleButton, treeButton, meteorRainButton,
+            fireworksButton, helixTPOButton, spiralsTPBButton, coUsaFlagsButton;
+    Button arduinoLoop1Button, arduinoLoop2Button;
     TextView textView;
     EditText editText;
     UsbManager usbManager;
@@ -223,8 +225,13 @@ public class MainActivity extends AppCompatActivity {
         treeButton = (Button) findViewById(R.id.treeButton);
         meteorRainButton = (Button) findViewById(R.id.meteorRainButton);
         fireworksButton = (Button) findViewById(R.id.fireworksButton);
+        helixTPOButton = (Button) findViewById(R.id.helixTPOButton);
+        spiralsTPBButton = (Button) findViewById(R.id.spiralsTPBButton);
 
         coUsaFlagsButton = (Button) findViewById(R.id.coUsaFlagsButton);
+
+        arduinoLoop1Button = (Button) findViewById(R.id.arduinoLoop1Button);
+        arduinoLoop2Button = (Button) findViewById(R.id.arduinoLoop2Button);
 
         editText = (EditText) findViewById(R.id.editText);
         textView = (TextView) findViewById(R.id.textView);
@@ -258,7 +265,11 @@ public class MainActivity extends AppCompatActivity {
         treeButton.setEnabled(enableFlag);
         meteorRainButton.setEnabled(enableFlag);
         fireworksButton.setEnabled(enableFlag);
+        helixTPOButton.setEnabled(enableFlag);
+        spiralsTPBButton.setEnabled(enableFlag);
         coUsaFlagsButton.setEnabled(enableFlag);
+        arduinoLoop1Button.setEnabled(enableFlag);
+        arduinoLoop2Button.setEnabled(enableFlag);
         textView.setEnabled(enableFlag);
     }
 
@@ -711,5 +722,18 @@ public class MainActivity extends AppCompatActivity {
         }else{
             return letterColor.toByteArray();
         }
+    }
+
+    // LOOPS
+    public void onClickArduinoLoop1(View view) {
+        storedAnimationCommand();
+        byte[] animCommand = new byte[] { (byte)0x50 };
+        serialPort.write(animCommand);
+    }
+
+    public void onClickArduinoLoop2(View view) {
+        storedAnimationCommand();
+        byte[] animCommand = new byte[] { (byte)0x51 };
+        serialPort.write(animCommand);
     }
 }

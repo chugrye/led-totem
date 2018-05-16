@@ -35,5 +35,8 @@
     <string name="button_co_usa_flags">CO + USA Flags</string>
     <string name="button_helix_tpo">Helix (Teal Purple Orange)</string>
     <string name="button_spirals_tpb">Spirals (Teal Purple Blue)</string>
+    <string name="header_loops">LOOPS</string>
+    <string name="button_arduino_loop1">Loop #1 (Arduino)</string>
+    <string name="button_arduino_loop2">Loop #2 (Arduino)</string>
 
 </resources>

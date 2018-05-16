@@ -218,6 +218,53 @@
             app:layout_constraintTop_toBottomOf="@+id/staticFlagsHeader" />
 
         <TextView
+            android:id="@+id/loopsHeader"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:layout_marginLeft="8dp"
+            android:layout_marginRight="8dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="30dp"
+            android:text="@string/header_loops"
+            android:textSize="30sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/coUsaFlagsButton" />
+
+        <Button
+            android:id="@+id/arduinoLoop1Button"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginLeft="8dp"
+            android:layout_marginRight="8dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="8dp"
+            android:onClick="onClickArduinoLoop1"
+            android:text="@string/button_arduino_loop1"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/loopsHeader" />
+
+        <Button
+            android:id="@+id/arduinoLoop2Button"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_marginEnd="8dp"
+            android:layout_marginLeft="8dp"
+            android:layout_marginRight="8dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="8dp"
+            android:onClick="onClickArduinoLoop2"
+            android:text="@string/button_arduino_loop2"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/arduinoLoop1Button" />
+
+        <TextView
             android:id="@+id/customAnimationHeader"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -226,7 +273,7 @@
             android:textSize="30sp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/coUsaFlagsButton" />
+            app:layout_constraintTop_toBottomOf="@+id/arduinoLoop2Button" />
 
         <Button
             android:id="@+id/rgbTrailButton"
