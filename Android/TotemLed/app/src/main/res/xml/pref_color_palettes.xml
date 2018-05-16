@@ -1,3 +1,8 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
-
+    <ListPreference
+        android:defaultValue="Teal Orange"
+        android:entries="@array/color_combinations"
+        android:entryValues="@array/color_combinations"
+        android:key="pref_message_color_palette"
+        android:title="@string/pref_message_color_palettes" />
 </PreferenceScreen>

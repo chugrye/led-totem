@@ -47,6 +47,8 @@ public class MainActivity extends AppCompatActivity {
     public final int LETTERHEIGHT = 5;
     public int brightness;
     public int framesPerSecond;
+    public MessageColorPalette messageColorPalette;
+    public byte staticMessageDelay;
     Button startButton, sendButton, clearButton, stopButton;
     Button rgbTrailButton, rainbowTrailButton, rainbowCycleButton, treeButton, meteorRainButton,
             fireworksButton, helixTPOButton, spiralsTPBButton, coUsaFlagsButton;
@@ -175,6 +177,9 @@ public class MainActivity extends AppCompatActivity {
                     } else if (key.equals("pref_fps")) {
                         int value = Integer.parseInt(prefs.getString(key, "15"));
                         framesPerSecond = value;
+                    } else if (key.equals("pref_message_color_palette")) {
+                        String colorPalette = prefs.getString(key, "Teal Purple");
+                        messageColorPalette = new MessageColorPalette(colorPalette);
                     }
                 }
             };
@@ -209,6 +214,9 @@ public class MainActivity extends AppCompatActivity {
 
         brightness = Integer.parseInt(prefs.getString("pref_brightness", "20"));
         framesPerSecond = Integer.parseInt(prefs.getString("example_list", "15"));
+        messageColorPalette = new MessageColorPalette(prefs.getString("pref_message_color_palette","teal purple"));
+        //yeah I know it's a little weird
+        staticMessageDelay = (byte)Integer.parseInt((prefs.getString("pref_static_message_delay","4")));
 
         // Clears preferences on app load
         prefs.edit().clear().commit();
@@ -597,10 +605,9 @@ public class MainActivity extends AppCompatActivity {
 
 
     public void onClickWord(View view) {
-        Log.i("Got here", "got here");
         String message = editText.getText().toString();
         try {
-            showStaticMessage(message, new Color((byte)200,(byte)155,(byte)0), new Color((byte)20,(byte)0,(byte)100), (byte)0x07);
+            showStaticMessage(message);
         } catch (IOException e) {
             Log.e("uh oh", e.getMessage());
         }
@@ -656,14 +663,16 @@ public class MainActivity extends AppCompatActivity {
         sendClear();
     }
 
-    private void showStaticMessage(String message, Color messageColor, Color backgroundColor, byte delayLevel) throws IOException {
+    private void showStaticMessage(String message) throws IOException {
         String[] words = message.split(" ");
         animationSetup(words.length);
         for( int wordPosition = 0; wordPosition < words.length; wordPosition++ ){
-            convertWordToStaticAnimation(words[wordPosition], messageColor, backgroundColor, wordPosition);
+            convertWordToStaticAnimation(
+                    words[wordPosition], messageColorPalette.getForeGround(),
+                    messageColorPalette.getBackGround(), wordPosition);
         }
 
-        sendClearAndAnimateWord(delayLevel);
+        sendClearAndAnimateWord(staticMessageDelay);
     }
 
     private void convertWordToStaticAnimation(String word, Color letterColor, Color backgroundColor, int wordNumber) throws IOException {
@@ -733,7 +742,47 @@ public class MainActivity extends AppCompatActivity {
 
     public void onClickArduinoLoop2(View view) {
         storedAnimationCommand();
-        byte[] animCommand = new byte[] { (byte)0x51 };
+        byte[] animCommand = new byte[]{(byte) 0x51};
         serialPort.write(animCommand);
+    }
+    private class MessageColorPalette{
+        Color foreGround;
+        Color backGround;
+
+        public MessageColorPalette(String colorPaletteName) {
+            if(colorPaletteName.toLowerCase().equals("teal purple")){
+                foreGround = new Color((byte)81, (byte)225, (byte)225);
+                backGround = new Color((byte)162, (byte)32, (byte)193);
+            }else if(colorPaletteName.toLowerCase().equals("grey black")){
+                foreGround = new Color((byte)100, (byte)100, (byte)100);
+                backGround = new Color((byte)0, (byte)0, (byte)0);
+            }else if(colorPaletteName.toLowerCase().equals("orange blue")){
+                foreGround = new Color((byte)235, (byte)141, (byte)48);
+                backGround = new Color((byte)60, (byte)75, (byte)223);
+            }else if(colorPaletteName.toLowerCase().equals("green red")){
+                foreGround = new Color((byte)77, (byte)206, (byte)86);
+                backGround = new Color((byte)203, (byte)111, (byte)80);
+            }else{
+                tvAppend(textView,"UNRECOGNIZED MESSAGE COLOR PALETTE");
+                foreGround = messageColorPalette.getForeGround();
+                backGround = messageColorPalette.getBackGround();
+            }
+        }
+
+        public Color getForeGround() {
+            return foreGround;
+        }
+
+        public void setForeGround(Color foreGround) {
+            this.foreGround = foreGround;
+        }
+
+        public Color getBackGround() {
+            return backGround;
+        }
+
+        public void setBackGround(Color backGround) {
+            this.backGround = backGround;
+        }
     }
 }
