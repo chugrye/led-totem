@@ -1,0 +1,16 @@
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <ListPreference
+        android:defaultValue="20"
+        android:entries="@array/brightness_levels"
+        android:entryValues="@array/brightness_levels"
+        android:key="pref_brightness"
+        android:title="@string/pref_title_brightness" />
+
+    <ListPreference
+        android:defaultValue="15"
+        android:entries="@array/frames_per_second_values"
+        android:entryValues="@array/frames_per_second_values"
+        android:key="@string/pref_fps"
+        android:title="@string/title_fps" />
+
+</PreferenceScreen>

@@ -1,4 +1,47 @@
 *.exe
 *.pdb
 *.cache
-*.txt
+.vs/
+CppProperties.json
+
+#built application files
+*.apk
+*.ap_
+
+# files for the dex VM
+*.dex
+
+# Java class files
+*.class
+
+# generated files
+bin/
+gen/
+obj/
+
+# Local configuration file (sdk path, etc)
+local.properties
+
+# Windows thumbnail db
+Thumbs.db
+
+# OSX files
+.DS_Store
+
+# Eclipse project files
+.classpath
+.project
+
+# Android Studio
+*.iws
+*.iml
+.idea
+.gradle
+build/
+*/build/
+
+# Visual Studio Arduino
+__vm/
+Debug/
+Release/
+Arduino/**/*.vcxproj*

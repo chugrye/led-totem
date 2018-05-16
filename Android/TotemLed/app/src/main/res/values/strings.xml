@@ -3,5 +3,37 @@
 
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
+    <string name="button_rgb_trail">RGB Trail</string>
     <string name="button_rainbow_trail">Rainbow Trail</string>
+    <string name="button_rainbow_cycle">Rainbow Cycle</string>
+    <string name="button_meteor_rain">Meteor Rain</string>
+
+    <string name="title_fps">Frames Per Second</string>
+    <string name="pref_fps">pref_fps</string>
+    <string name="summary_fps">Specify the animation speed</string>
+    <string name="title_activity_settings">Settings</string>
+
+    <!-- Strings related to Settings -->
+    <!-- General Settings -->
+    <string name="pref_title_brightness">Brightness</string>
+    <string name="pref_header_general">General</string>
+
+    <string-array name="pref_example_list_values">
+        <item>1</item>
+        <item>0</item>
+        <item>-1</item>
+    </string-array>
+
+    <string name="pref_header_data_sync">Data &amp; sync</string>
+
+    <!-- Color Palettes -->
+    <string name="pref_header_color_palettes">Color Palettes</string>
+    <string name="header_arduino_animations">ARDUINO</string>
+    <string name="header_custom_animations">CUSTOM Animations</string>
+    <string name="button_fireworks">FIREWORKS!!!</string>
+    <string name="header_static_flags">Flags (static)</string>
+    <string name="button_co_usa_flags">CO + USA Flags</string>
+    <string name="button_helix_tpo">Helix (Teal Purple Orange)</string>
+    <string name="button_spirals_tpb">Spirals (Teal Purple Blue)</string>
+
 </resources>
