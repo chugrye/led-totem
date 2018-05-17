@@ -752,17 +752,19 @@ public class MainActivity extends AppCompatActivity {
         public MessageColorPalette(String colorPaletteName) {
             if(colorPaletteName.toLowerCase().equals("teal purple")){
                 foreGround = new Color((byte)81, (byte)225, (byte)225);
-                backGround = new Color((byte)162, (byte)32, (byte)193);
+                backGround = new Color((byte)97, (byte)32, (byte)132);
             }else if(colorPaletteName.toLowerCase().equals("grey black")){
                 foreGround = new Color((byte)100, (byte)100, (byte)100);
                 backGround = new Color((byte)0, (byte)0, (byte)0);
             }else if(colorPaletteName.toLowerCase().equals("orange blue")){
-                foreGround = new Color((byte)235, (byte)141, (byte)48);
-                backGround = new Color((byte)60, (byte)75, (byte)223);
-            }else if(colorPaletteName.toLowerCase().equals("green red")){
-                foreGround = new Color((byte)77, (byte)206, (byte)86);
-                backGround = new Color((byte)203, (byte)111, (byte)80);
+                foreGround = new Color((byte)235, (byte)92, (byte)5);
+                backGround = new Color((byte)24, (byte)22, (byte)100);
+            }else if(colorPaletteName.toLowerCase().equals("red green")){
+                foreGround = new Color((byte)203, (byte)20, (byte)20);
+                backGround = new Color((byte)10, (byte)206, (byte)10);
             }else{
+                Log.e("uh oh", "UNRECOGNIZED MESSAGE COLOR PALETTE:" + colorPaletteName);
+
                 tvAppend(textView,"UNRECOGNIZED MESSAGE COLOR PALETTE");
                 foreGround = messageColorPalette.getForeGround();
                 backGround = messageColorPalette.getBackGround();
